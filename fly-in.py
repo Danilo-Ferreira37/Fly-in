@@ -19,7 +19,6 @@ def main():
         struct.drones[0].advance_my_drone()
         turn += 1
         if struct.drones[0].delivered:
-            turn += 1
             print(struct.drones[0].current_hub)
             print(f"Drone delivered with {turn} turns!!!!")
             break

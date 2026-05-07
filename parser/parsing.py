@@ -1,6 +1,6 @@
 from enum import Enum
 import re
-#pygame
+
 
 class ParsingError(Exception):
     pass
@@ -95,7 +95,7 @@ class ConfigParser:
         try:
             hub = False
             if line.startswith("nb_drones"):
-                _, value = line.split(":", 1)
+                value = line.split(":", 1)[1]
                 value = int(value)
                 if value <= 0:
                     raise ValueError
@@ -157,11 +157,11 @@ class ConfigParser:
             if "nb_drones" in self.parse_key:
                 raise ValueError("There can only be one nb_drones key in the file!")
             self.parse_key.add("nb_drones")
-            key, value = line.split(":")
+            key = line.split(":", 1)[0]
             self.config[key] = self.parse_line(line)
 
         elif line.startswith("start_hub") or line.startswith("end_hub"):
-            key, value = line.split(":", 1)
+            key = line.split(":", 1)[0]
             if key.strip() in self.parse_key:
                 raise ValueError(f"There can only be one {key.strip()} key in the file!")
             
@@ -170,7 +170,6 @@ class ConfigParser:
 
         elif line.startswith("hub"):
             self.parse_key.add("hub")
-            data = line[5:].split()
 
             if not self.config.get("hub"):
                 self.config["hub"] = []
@@ -183,11 +182,6 @@ class ConfigParser:
             if not self.config.get("connection"):
                 self.config["connection"] = []
             self.config["connection"].append(self.parse_line(line))
-
-            #if len(data[1].split()) > 1:
-            #    atrb = data[1].split()[1]
-            #    data[1] = data[1].split()[0]
-            
 
         else:
             raise ValueError(f"The file has a invalid key/value: '{line}'")
@@ -210,7 +204,7 @@ class ConfigParser:
 
         except PermissionError:
             print("Error: The file hasn't permission!")
-            print(f"For executes the program enter: chmod +r {self.file}")
+            print(f"For executes the program enter: chmod +rx {self.file}")
             exit(1)
         except FileNotFoundError:
             print("Configuration file not found.")
