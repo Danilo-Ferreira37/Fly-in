@@ -49,7 +49,7 @@ class ConfigParser:
         return line
 
     @staticmethod
-    def split_metadata(line):
+    def split_metadata(line: str, conx: bool = False):
         val_keys = ", ".join(item.value for item in MetaDataKeys)
         val_zone = ", ".join(item.value for item in TypeZone)
         match = re.search(r"\[(.*)$", line)
@@ -66,6 +66,8 @@ class ConfigParser:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
             key, value = (info.strip() for info in d.split("=", 1))
+            if conx and key != MetaDataKeys.MAX_LINK_CAPACITY.value:
+                raise ParsingError("The connection only can has 'max_link_capacity' metadata")
             if not MetaDataKeys.has_value(key):
                 
                 raise ParsingError(f"The Metadata key must be one of {val_keys}")
@@ -82,6 +84,9 @@ class ConfigParser:
                     raise ValueError 
                 metadata[key] = val
                 continue
+            elif key == MetaDataKeys.MAX_LINK_CAPACITY.value:
+                if not conx:
+                    raise ParsingError("The metadata 'max_link_capacity' only can be in connections!")
 
             metadata[key] = value
         return rest, metadata
@@ -122,7 +127,7 @@ class ConfigParser:
 
             elif line.startswith("connection"):
                 data = line.split(":", 1)[1].strip()
-                data, metadata = self.split_metadata(data)
+                data, metadata = self.split_metadata(data, True)
                 hub_from, hub_to = (hub.strip() for hub in data.split("-", 1))
                 if hub_from not in self.hub_names or hub_to not in self.hub_names:
                     raise ParsingError("The connections need to be made with existing hubs")
