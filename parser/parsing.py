@@ -6,11 +6,30 @@ class ParsingError(Exception):
     pass
 
 
-class Types(Enum):
+class TypeZone(Enum):
     NORMAL = "normal"
     RESTRICTED = "restricted"
     PRIORITY = "priority"
     BLOCKED = "blocked"
+    @classmethod
+    def has_value(cls, value):
+        return value in (item.value for item in cls)
+
+
+class MetaDataKeys(Enum):
+    ZONE = "zone"
+    COLOR = "color"
+    MAX_DRONES = "max_drones"
+    MAX_LINK_CAPACITY = "max_link_capacity"
+
+    @classmethod
+    def has_value(cls, value):
+        return value in (item.value for item in cls)
+
+    @staticmethod
+    def valid_color(color):
+        return color in ["blue", "green", 'yellow', 'red', 'ciane', 'white', 'purple', 'orange', 'gray']
+
 
 class ConfigParser:
     def __init__(self, file: str) -> None:
@@ -31,25 +50,41 @@ class ConfigParser:
 
     @staticmethod
     def split_metadata(line):
-        
-        match = re.search(r"\[(.*)\]", line)
+        val_keys = ", ".join(item.value for item in MetaDataKeys)
+        val_zone = ", ".join(item.value for item in TypeZone)
+        match = re.search(r"\[(.*)$", line)
         if not match:
             return line.strip(), {}
-        content  = match.group(1)
-        if "[" in content or "]" in content:
-            raise ParsingError("The metadata is invalid, must be for example: '[color= Red]'")
+        content = match.group(1)
+        if "[" in content or content[-1] != "]":
+            raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
         rest = line.replace(match.group(0), "").strip()
         metadata = {}
-        div_data = content.split()
+        div_data = content.replace("]", "", 1).split()
+        
         for d in div_data:
-            key, value = d.split("=")
-            if value.isdigit():
-                value = int(value)
+            if "=" not in d:
+                raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
+            key, value = (info.strip() for info in d.split("=", 1))
+            if not MetaDataKeys.has_value(key):
+                
+                raise ParsingError(f"The Metadata key must be one of {val_keys}")
+
+            if key == MetaDataKeys.COLOR.value:
+                if not MetaDataKeys.valid_color(value):
+                    raise ParsingError("Enter a valid color")
+            elif key == MetaDataKeys.ZONE.value:
+                if not TypeZone.has_value(value):
+                    raise ParsingError(f"Enter a valid type zone: {val_zone}")
+            elif key == MetaDataKeys.MAX_DRONES.value:
+                val = int(value)
+                if not val > 0:
+                    raise ValueError 
+                metadata[key] = val
+                continue
+
             metadata[key] = value
         return rest, metadata
-            
-
-
 
     def parse_line(self, line: str) -> None:
         try:
@@ -61,29 +96,45 @@ class ConfigParser:
                     raise ValueError
                 return value
 
-            elif line.startswith("start_hub") or line.startswith("end_hub") or line.startswith("hub"):
+            elif (line.startswith("start_hub")
+                  or line.startswith("end_hub")
+                  or line.startswith("hub")):
                 if line.startswith("hub"):
                     hub = True
-                line = line.split(":", 1)[1]
+                line = line.split(":")[1]
                 line, metadata = self.split_metadata(line.strip())
                 line = line.split()
                 if len(line) != 3:
                     raise ParsingError("The hub must follow the format of the example below\n"
                     "'hub: roof1 3 4 [zone=restricted color=red]'!")
+
+                if "-" in line[0]:
+                    raise ParsingError("The hub name cannot has '-' in name")
+                if line[0] in self.hub_names:
+                    raise ParsingError("Hubs cannot have repeated names.")
+                self.hub_names.append(line[0].strip())
+                x, y = int(line[1]), int(line[2])
+                if x < 0 or y < 0:
+                    raise ValueError
                 if hub:
-                    return {line[0]: {"X": int(line[1]), "Y": int(line[2]), "metadata": metadata}}
-                return {"name": line[0], "X": int(line[1]), "Y": int(line[2]), "metadata": metadata}
+                    return {line[0].strip(): {"X": x, "Y": y, "metadata": metadata}}
+                return {"name": line[0].strip(), "X": x, "Y": y, "metadata": metadata}
+
+            elif line.startswith("connection"):
+                data = line.split(":", 1)[1].strip()
+                data, metadata = self.split_metadata(data)
+                hub_from, hub_to = (hub.strip() for hub in data.split("-", 1))
+                if hub_from not in self.hub_names or hub_to not in self.hub_names:
+                    raise ParsingError("The connections need to be made with existing hubs")
+                return {"from": hub_from, "to": hub_to, "metadata": metadata}
 
         except ValueError:
-            print(f"Error: The nb_drones, X/Y coordinades value must be a positive integer!")
+            print(f"Error: The nb_drones, X/Y coordinades, max_drones and limits_capacity value must be a positive integer!")
             exit(1)
         except ParsingError as e:
             print(f"Error: {e}")
             exit(1)
 
-
-
-        
 
     def split_parse_line(self, line: str):
         line = line.strip()
@@ -122,16 +173,16 @@ class ConfigParser:
 
         elif line.startswith("connection"):
             self.parse_key.add("connection")
-            data = line.split(":")[1].strip()
-            data = data.split("-")
-            atrb = None
-            self.parse_line(line)
-            if len(data[1].split()) > 1:
-                atrb = data[1].split()[1]
-                data[1] = data[1].split()[0]
+            if not "-" in line:
+                raise ParsingError("To make a connection you must put '-' between hub names")
             if not self.config.get("connection"):
                 self.config["connection"] = []
-            self.config["connection"].append({"from": data[0], "to": data[1], "atrb": atrb})
+            self.config["connection"].append(self.parse_line(line))
+
+            #if len(data[1].split()) > 1:
+            #    atrb = data[1].split()[1]
+            #    data[1] = data[1].split()[0]
+            
 
         else:
             raise ValueError(f"The file has a invalid key/value: '{line}'")
@@ -162,11 +213,9 @@ class ConfigParser:
         except ValueError as e:
             print(f"Error: {e}")
             exit(1)
-        #except Exception as e:
-        #    print(f"Error reading config: {e}")
-        #    exit(1)
-
-
+        except Exception as e:
+            print(f"Error reading config: {e}")
+            exit(1)
 
 
     def parse(self) -> dict:
