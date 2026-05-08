@@ -11,12 +11,13 @@ class TypeZone(Enum):
     RESTRICTED = "restricted"
     PRIORITY = "priority"
     BLOCKED = "blocked"
+
     @classmethod
     def has_value(cls, value):
         return value in (item.value for item in cls)
 
 
-class MetaDataKeys(Enum):
+class MetaData(Enum):
     ZONE = "zone"
     COLOR = "color"
     MAX_DRONES = "max_drones"
@@ -37,8 +38,8 @@ class ConfigParser:
         self.required = {"nb_drones", "start_hub", "end_hub", "hub", "connection"}
         self.parse_key = set()
         self.config = {}
-        self.hub_names = []
-        self.hub_coordinades = []
+        self.hub_names = set()
+        self.hub_coordinades = set()
 
     @staticmethod
     def clean_line(line: str) -> str | None:
@@ -60,31 +61,31 @@ class ConfigParser:
         rest = line.replace(match.group(0), "").strip()
         div_data = content.replace("]", "", 1).split()
 
-        val_keys = ", ".join(item.value for item in MetaDataKeys)
+        val_keys = ", ".join(item.value for item in MetaData if item != MetaData.MAX_LINK_CAPACITY)
         val_zone = ", ".join(item.value for item in TypeZone)
         metadata = {}
         for d in div_data:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
             key, value = (info.strip() for info in d.split("=", 1))
-            if conx and key != MetaDataKeys.MAX_LINK_CAPACITY.value:
+            if conx and key != MetaData.MAX_LINK_CAPACITY.value:
                 raise ParsingError("The connection only can has 'max_link_capacity' metadata")
-            if not MetaDataKeys.has_value(key):
+            if not MetaData.has_value(key):
                 raise ParsingError(f"The Metadata key must be one of {val_keys}")
 
-            if key == MetaDataKeys.COLOR.value:
-                if not MetaDataKeys.valid_color(value):
+            if key == MetaData.COLOR.value:
+                if not MetaData.valid_color(value):
                     raise ParsingError("Enter a valid color")
-            elif key == MetaDataKeys.ZONE.value:
+            elif key == MetaData.ZONE.value:
                 if not TypeZone.has_value(value):
                     raise ParsingError(f"Enter a valid type zone: {val_zone}")
-            elif key == MetaDataKeys.MAX_DRONES.value:
+            elif key == MetaData.MAX_DRONES.value:
                 val = int(value)
                 if not val > 0:
                     raise ValueError 
                 metadata[key] = val
                 continue
-            elif key == MetaDataKeys.MAX_LINK_CAPACITY.value:
+            elif key == MetaData.MAX_LINK_CAPACITY.value:
                 if not conx:
                     raise ParsingError("The metadata 'max_link_capacity' only can be in connections!")
 
@@ -96,7 +97,7 @@ class ConfigParser:
         try:
             hub = False
             if line.startswith("nb_drones"):
-                value = line.split(":", 1)[1]
+                key, value = line.split(":", 1)
                 value = int(value)
                 if value <= 0:
                     raise ValueError
@@ -107,10 +108,10 @@ class ConfigParser:
                   or line.startswith("hub")):
                 if line.startswith("hub"):
                     hub = True
-                line = line.split(":")[1]
+                key, line = line.split(":", 1)
                 line, metadata = self.split_metadata(line.strip())
                 line = line.split()
-                if len(line) != 3:
+                if len(line) != 3 or key.strip() not in ("start_hub", "end_hub", "hub"):
                     raise ParsingError("The hub must follow the format of the example below\n"
                     "'hub: roof1 3 4 [zone=restricted color=red]'!")
 
@@ -118,13 +119,13 @@ class ConfigParser:
                     raise ParsingError("The hub name cannot has '-' in name")
                 if line[0] in self.hub_names:
                     raise ParsingError("Hubs cannot have repeated names.")
-                self.hub_names.append(line[0].strip())
+                self.hub_names.add(line[0].strip())
                 cord = (int(line[1]), int(line[2]))
                 if cord in self.hub_coordinades:
                     raise ParsingError("The hub coordinades must be differents!")
                 if cord[0] < 0 or cord[1] < 0:
                     raise ValueError
-                self.hub_coordinades.append(cord)
+                self.hub_coordinades.add(cord)
                 if hub:
                     return {line[0].strip(): {"X/Y": cord, "metadata": metadata}}
                 return {"name": line[0].strip(), "X/Y": cord, "metadata": metadata}
@@ -160,8 +161,8 @@ class ConfigParser:
         if line.startswith("nb_drones"):
             if "nb_drones" in self.parse_key:
                 raise ValueError("There can only be one nb_drones key in the file!")
-            self.parse_key.add("nb_drones")
             key = line.split(":", 1)[0]
+            self.parse_key.add(key.strip())
             self.config[key] = self.parse_line(line)
 
         elif line.startswith("start_hub") or line.startswith("end_hub"):
@@ -180,6 +181,8 @@ class ConfigParser:
             self.config["hub"].append(self.parse_line(line))
 
         elif line.startswith("connection"):
+            if line.split(":", 1)[0].strip() != "connection":
+                raise ParsingError("The key connection is wrong!")
             self.parse_key.add("connection")
             if not "-" in line:
                 raise ParsingError("To make a connection you must put '-' between hub names")

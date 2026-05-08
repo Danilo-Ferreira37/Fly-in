@@ -11,18 +11,8 @@ def main():
 
     struct = Map(info)
     for h in struct.hubs:
-        print(h)
-    #print(struct.connections)
-    turn = 0
-    print()
-    while (True):
-        print(struct.drones[0].current_hub)
-        struct.drones[0].advance_my_drone()
-        turn += 1
-        if struct.drones[0].delivered:
-            print(struct.drones[0].current_hub)
-            print(f"Drone delivered with {turn} turns!!!!")
-            break
+        print(h.max_drones, h.zone)
+    print(struct.connections)
 
 
 if __name__ == "__main__":

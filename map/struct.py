@@ -1,20 +1,23 @@
 from typing import Tuple
+from parser import MetaData , TypeZone
+import time
+from collections import deque
 
 class Drone:
     def __init__(self, id: str, start_h: "Hub", end_h: "Hub") -> None:
         self.id = id
         self.current_hub = start_h
         self.goal = end_h
-
         self.delivered = False
+
         self.state = None
-        self.path = None
+        self.path = []
+        self.delay_turns = 0
 
-    def advance_my_drone(self):
-        self.current_hub = self.current_hub.next[0]
-        if self.current_hub == self.goal:
-            self.delivered = True
-
+    def drone_state(self):
+        if self.delivered:
+            return False
+        
 
 
 
@@ -23,6 +26,10 @@ class Hub:
         self.name = name
         self.coord = coord
         self.metadata = metadata
+        self.color = metadata.get("color")
+        self.zone = metadata.get("zone", "normal")
+        self.max_drones = metadata.get("max_drones", 1)
+
         self.start = (start)
         self.end = (end)
         self.prev = []
@@ -43,10 +50,10 @@ class Connection:
         self.destiny = to_hub
         to_hub.prev.append(from_hub)
 
-        self.metadata = metadata
+        self.max_link_cap = metadata.get("max_link_capacity", 1)
 
     def __repr__(self):
-        return f"Connection({self.origin.name} -> {self.destiny.name}, {self.metadata})"
+        return f"Connection({self.origin.name} -> {self.destiny.name}, max_cap: {self.max_link_cap})"
 
 
 class Map:
@@ -73,4 +80,21 @@ class Map:
                 elif c["to"] == hub.name:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
+        
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub) for d in range(config["nb_drones"])]
+
+        self.pathfind_base()
+
+    def pathfind_base(self):
+        """BFS algoritm to find the base path that will
+        serve as a basis to the Dijkstra algoritm"""
+        queue = deque(self.start_hub)
+        visited = {self.start_hub}
+        parent = {self.start_hub: None}
+
+        #ta ERRADo
+        while (queue):
+            for neighbor in queue.popleft():
+                print(neighbor)
+
+
