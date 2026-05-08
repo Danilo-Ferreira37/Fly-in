@@ -1,3 +1,5 @@
+from typing import Tuple
+
 class Drone:
     def __init__(self, id: str, start_h: "Hub", end_h: "Hub") -> None:
         self.id = id
@@ -14,10 +16,12 @@ class Drone:
             self.delivered = True
 
 
+
+
 class Hub:
-    def __init__(self, name: str, x: int, y: int, metadata: dict, start: bool = False, end: bool = False):
+    def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
         self.name = name
-        self.coord = (x,y)
+        self.coord = coord
         self.metadata = metadata
         self.start = (start)
         self.end = (end)
@@ -26,10 +30,10 @@ class Hub:
 
     def __str__(self):
         if self.start:
-            return f"Hub_start: {self.name} {self.coord} {self.metadata}"
+            return f"Hub_start: {self.name}  {self.coord} {self.metadata}"
         elif self.end:
-            return f"Hub_end: {self.name} {self.coord} {self.metadata}"
-        return f"{self.name} {self.coord} {self.metadata}"
+            return f"Hub_end: {self.name}  {self.coord} {self.metadata}"
+        return f"{self.name}  {self.coord} {self.metadata}"
 
 
 class Connection:
@@ -48,17 +52,17 @@ class Connection:
 class Map:
     def __init__(self, config: dict):
         self.start_hub = Hub(config["start_hub"]["name"],
-                             config["start_hub"]["X"], config["start_hub"]["Y"],
+                             config["start_hub"]["X/Y"],
                              config["start_hub"]["metadata"], start=True)
         
         self.end_hub = Hub(config["end_hub"]["name"],
-                             config["end_hub"]["X"], config["end_hub"]["Y"],
+                             config["end_hub"]["X/Y"],
                              config["end_hub"]["metadata"], end=True)
         
         self.hubs = [self.start_hub, self.end_hub]
         for h in config["hub"]:
             for key, value in h.items():
-                self.hubs.append(Hub(key, value["X"], value["Y"], value["metadata"]))
+                self.hubs.append(Hub(key, value["X/Y"], value["metadata"]))
 
         self.connections = []
         from_h, to_h = None, None
@@ -69,7 +73,4 @@ class Map:
                 elif c["to"] == hub.name:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
-
-
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub) for d in range(config["nb_drones"])]
-

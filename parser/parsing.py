@@ -38,6 +38,7 @@ class ConfigParser:
         self.parse_key = set()
         self.config = {}
         self.hub_names = []
+        self.hub_coordinades = []
 
     @staticmethod
     def clean_line(line: str) -> str | None:
@@ -50,8 +51,6 @@ class ConfigParser:
 
     @staticmethod
     def split_metadata(line: str, conx: bool = False):
-        val_keys = ", ".join(item.value for item in MetaDataKeys)
-        val_zone = ", ".join(item.value for item in TypeZone)
         match = re.search(r"\[(.*)$", line)
         if not match:
             return line.strip(), {}
@@ -59,9 +58,11 @@ class ConfigParser:
         if "[" in content or content[-1] != "]":
             raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
         rest = line.replace(match.group(0), "").strip()
-        metadata = {}
         div_data = content.replace("]", "", 1).split()
-        
+
+        val_keys = ", ".join(item.value for item in MetaDataKeys)
+        val_zone = ", ".join(item.value for item in TypeZone)
+        metadata = {}
         for d in div_data:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
@@ -69,7 +70,6 @@ class ConfigParser:
             if conx and key != MetaDataKeys.MAX_LINK_CAPACITY.value:
                 raise ParsingError("The connection only can has 'max_link_capacity' metadata")
             if not MetaDataKeys.has_value(key):
-                
                 raise ParsingError(f"The Metadata key must be one of {val_keys}")
 
             if key == MetaDataKeys.COLOR.value:
@@ -89,6 +89,7 @@ class ConfigParser:
                     raise ParsingError("The metadata 'max_link_capacity' only can be in connections!")
 
             metadata[key] = value
+
         return rest, metadata
 
     def parse_line(self, line: str) -> None:
@@ -118,12 +119,15 @@ class ConfigParser:
                 if line[0] in self.hub_names:
                     raise ParsingError("Hubs cannot have repeated names.")
                 self.hub_names.append(line[0].strip())
-                x, y = int(line[1]), int(line[2])
-                if x < 0 or y < 0:
+                cord = (int(line[1]), int(line[2]))
+                if cord in self.hub_coordinades:
+                    raise ParsingError("The hub coordinades must be differents!")
+                if cord[0] < 0 or cord[1] < 0:
                     raise ValueError
+                self.hub_coordinades.append(cord)
                 if hub:
-                    return {line[0].strip(): {"X": x, "Y": y, "metadata": metadata}}
-                return {"name": line[0].strip(), "X": x, "Y": y, "metadata": metadata}
+                    return {line[0].strip(): {"X/Y": cord, "metadata": metadata}}
+                return {"name": line[0].strip(), "X/Y": cord, "metadata": metadata}
 
             elif line.startswith("connection"):
                 data = line.split(":", 1)[1].strip()
@@ -215,11 +219,3 @@ class ConfigParser:
         except Exception as e:
             print(f"Error reading config: {e}")
             exit(1)
-
-
-    def parse(self) -> dict:
-       info = self.load_file()
-       return info
-
-
-
