@@ -10,9 +10,9 @@ def main():
     info: dict
 
     struct = Map(info)
-    for h in struct.hubs:
-        print(h.max_drones, h.zone)
-    print(struct.connections)
+    #for h in struct.hubs:
+    #    print(h.max_drones, h.zone)
+    #print(struct.connections)
 
 
 if __name__ == "__main__":

@@ -19,8 +19,6 @@ class Drone:
             return False
         
 
-
-
 class Hub:
     def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
         self.name = name
@@ -30,6 +28,7 @@ class Hub:
         self.zone = metadata.get("zone", "normal")
         self.max_drones = metadata.get("max_drones", 1)
 
+        self.visited = False
         self.start = (start)
         self.end = (end)
         self.prev = []
@@ -83,18 +82,5 @@ class Map:
         
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub) for d in range(config["nb_drones"])]
 
-        self.pathfind_base()
-
-    def pathfind_base(self):
-        """BFS algoritm to find the base path that will
-        serve as a basis to the Dijkstra algoritm"""
-        queue = deque(self.start_hub)
-        visited = {self.start_hub}
-        parent = {self.start_hub: None}
-
-        #ta ERRADo
-        while (queue):
-            for neighbor in queue.popleft():
-                print(neighbor)
-
-
+    def dijkstra(self):
+        pass

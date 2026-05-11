@@ -1,3 +1,5 @@
+from collections import deque
+
     #turn = 0
     #while (True):
     #    print(struct.drones[0].current_hub)
@@ -39,3 +41,30 @@ def drones_state(self):
                 drones_move.append(d)
 
         return drones_move, drones_wait
+
+def pathfind_base(self):
+        """BFS algoritm to find the base path that will
+        serve as a basis to the Dijkstra algoritm"""
+        queue = deque([self.start_hub])
+        parent = {self.start_hub: None}
+        self.start_hub.visited = True
+
+        while (queue):
+            current = queue.popleft()
+            if current.end:
+                break
+            for neighbor in current.next:
+                if not neighbor.visited:
+                    neighbor.visited = True
+                    queue.append(neighbor)
+                    parent[neighbor] = current
+        
+        path = []
+        hub = self.end_hub
+        while hub:
+            path.append(hub)
+            hub = parent[hub]
+        path.reverse()
+        for p in path:
+            print(p.name)
+        return path
