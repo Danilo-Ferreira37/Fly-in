@@ -1,19 +1,23 @@
 nb_drones: 1
 #DANILAOOOO
 
-start_hub: hub 5 0 [color=red]
+start_hub: start 5 0 [color=red]
 end_hub: goal 10 10 [color=yellow]
 
-hub: roof1 3 4 [zone=restricted color=red]
-hub: roof2 6 2 [zone=normal color=blue max_drones=2]
-hub: div 2 3 [color=yellow]
-hub: roof3 6 3 [zone=restricted color=red]
-hub: roof4 0 9 [zone=restricted color=red]
+hub: A 3 4 [zone=normal color=red]
+hub: B 6 2 [zone=restricted color=blue max_drones=2]
+hub: C 6 3 [zone=normal color=red]
+hub: D 0 9 [zone=restricted color=red]
+hub: E 3 2 [zone=normal color=red]
+#hub: F 3 3 [color=blue]
 
-connection: hub-div [max_link_capacity=2]
-connection: hub-roof1
+connection: start-A [max_link_capacity=2]
+connection: start-B
+connection: B-D
+connection: A-C
+connection: C-E
+connection: D-goal
+connection: E-F
 
-connection: div-roof1
-connection: div-roof2
+connection: F-goal
 
-connection: roof2-goal

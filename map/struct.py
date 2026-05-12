@@ -2,6 +2,8 @@ from typing import Tuple
 from parser import MetaData , TypeZone
 import time
 from collections import deque
+import heapq
+
 
 class Drone:
     def __init__(self, id: str, start_h: "Hub", end_h: "Hub") -> None:
@@ -26,9 +28,9 @@ class Hub:
         self.metadata = metadata
         self.color = metadata.get("color")
         self.zone = metadata.get("zone", "normal")
+        self.cost = 1 if self.zone in ("normal", "priority") else 2
         self.max_drones = metadata.get("max_drones", 1)
 
-        self.visited = False
         self.start = (start)
         self.end = (end)
         self.prev = []
@@ -82,5 +84,43 @@ class Map:
         
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub) for d in range(config["nb_drones"])]
 
+        self.path = self.dijkstra()
+
+
+
+
+
     def dijkstra(self):
-        pass
+        dist = {h: float("inf") for h in self.hubs}
+        dist[self.start_hub] = 0
+        min_queue = [(0, 0, self.start_hub)]
+        parent = {self.start_hub: None}
+        
+        count = 0
+        while (min_queue):
+            cost, _, current = heapq.heappop(min_queue)
+            if current.end:
+                break
+            #verifica entradas antigas
+            if cost > dist[current]:
+                continue
+
+            for neighbor in current.next:
+                new_cost = cost + neighbor.cost
+                if new_cost < dist[neighbor] and not neighbor.zone == TypeZone.BLOCKED.value:
+                    dist[neighbor] = new_cost
+                    print(neighbor.name, new_cost)
+                    heapq.heappush(min_queue, (new_cost, count, neighbor))
+                    count += 1
+                    parent[neighbor] = current
+
+
+        hub = self.end_hub
+        path = []
+        while hub:
+            path.append(hub)
+            hub = parent[hub]
+        path.reverse()
+        print()
+        for h in path:
+            print(h.name)
