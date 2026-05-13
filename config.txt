@@ -1,4 +1,4 @@
-nb_drones: 1
+nb_drones: 2
 #DANILAOOOO
 
 start_hub: start 5 0 [color=red]
@@ -16,8 +16,8 @@ connection: start-B
 connection: B-D
 connection: A-C
 connection: C-E
-connection: D-goal
-connection: E-F
+connection: D-E
+connection: E-goal
 
-connection: F-goal
+#connection: F-goal
 

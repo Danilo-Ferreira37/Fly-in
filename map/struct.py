@@ -1,24 +1,20 @@
 from typing import Tuple
 from parser import MetaData , TypeZone
-import time
 from collections import deque
 import heapq
 
 
 class Drone:
-    def __init__(self, id: str, start_h: "Hub", end_h: "Hub") -> None:
+    def __init__(self, id: str, start_h: "Hub", end_h: "Hub", path: list["Hub"]) -> None:
         self.id = id
         self.current_hub = start_h
         self.goal = end_h
         self.delivered = False
 
         self.state = None
-        self.path = []
+        self.path = path
         self.delay_turns = 0
-
-    def drone_state(self):
-        if self.delivered:
-            return False
+        self.hub_idx = 0
         
 
 class Hub:
@@ -31,10 +27,16 @@ class Hub:
         self.cost = 1 if self.zone in ("normal", "priority") else 2
         self.max_drones = metadata.get("max_drones", 1)
 
+        self.qnty_drones = 0
         self.start = (start)
         self.end = (end)
+        if start or end:
+            self.max_drones = float("inf")
         self.prev = []
         self.next = []
+
+    def can_drone_receive(self) -> bool:
+        return self.qnty_drones < self.max_drones
 
     def __str__(self):
         if self.start:
@@ -81,46 +83,64 @@ class Map:
                 elif c["to"] == hub.name:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
-        
-        self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub) for d in range(config["nb_drones"])]
-
-        self.path = self.dijkstra()
-
-
+        self.path = self.dijkstra(self.start_hub)
+        self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub, self.path) for d in range(config["nb_drones"])]
+        while not self.drones[0].delivered or not self.drones[1].delivered:
+            self.simulate_turn()
 
 
-
-    def dijkstra(self):
+    def dijkstra(self, start_hub, hub_to_add: Hub = False):
         dist = {h: float("inf") for h in self.hubs}
-        dist[self.start_hub] = 0
-        min_queue = [(0, 0, self.start_hub)]
-        parent = {self.start_hub: None}
-        
+        dist[start_hub] = 0
+        min_queue = [(0, 0, start_hub)]
+        parent = {start_hub: None}
+
         count = 0
         while (min_queue):
             cost, _, current = heapq.heappop(min_queue)
             if current.end:
                 break
-            #verifica entradas antigas
+            #verifica entradas antigas pra ver se encontrou um path com menos custo
             if cost > dist[current]:
                 continue
 
             for neighbor in current.next:
                 new_cost = cost + neighbor.cost
+                if neighbor == hub_to_add:
+                    new_cost += 1
                 if new_cost < dist[neighbor] and not neighbor.zone == TypeZone.BLOCKED.value:
                     dist[neighbor] = new_cost
-                    print(neighbor.name, new_cost)
                     heapq.heappush(min_queue, (new_cost, count, neighbor))
                     count += 1
                     parent[neighbor] = current
-
-
         hub = self.end_hub
         path = []
         while hub:
             path.append(hub)
             hub = parent[hub]
         path.reverse()
-        print()
-        for h in path:
-            print(h.name)
+        return path
+
+    def drone_can_advance(self, drone: Drone):
+        return drone.path[drone.hub_idx + 1].can_drone_receive()
+
+
+    def simulate_turn(self):
+        for d in self.drones:
+            print(d.id, d.path[d.hub_idx].name)
+
+            if d.path[d.hub_idx].end:
+                d.delivered = True
+                print(f"drone: {d.id} delivered")
+                continue
+            elif self.drone_can_advance(d):
+                #diminui o n drones do hub atual
+                d.path[d.hub_idx].qnty_drones -= 1
+                d.hub_idx += 1
+                #aumenta a qnty de drones no proximo
+                d.path[d.hub_idx].qnty_drones += 1
+            else:
+                print(d.id, "drone wait")
+
+            
+
