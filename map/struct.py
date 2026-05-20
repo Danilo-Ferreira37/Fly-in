@@ -11,9 +11,7 @@ class Drone:
         self.goal = end_h
         self.delivered = False
 
-        self.state = None
         self.path = path
-        self.delay_turns = 0
         self.hub_idx = 0
         
 
@@ -83,17 +81,19 @@ class Map:
                 elif c["to"] == hub.name:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
-        self.path = self.dijkstra(self.start_hub)
+        self.path = self.dijkstra()
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub, self.path) for d in range(config["nb_drones"])]
-        while not self.drones[0].delivered or not self.drones[1].delivered:
+        while any(not d.delivered for d in self.drones):
             self.simulate_turn()
 
 
-    def dijkstra(self, start_hub, hub_to_add: Hub = False):
+    def dijkstra(self, haddcost: Tuple[Hub, int] = False):
+        if haddcost:
+            haddcost[0].cost += haddcost[1]
         dist = {h: float("inf") for h in self.hubs}
-        dist[start_hub] = 0
-        min_queue = [(0, 0, start_hub)]
-        parent = {start_hub: None}
+        dist[self.start_hub] = 0
+        min_queue = [(0, 0, self.start_hub)]
+        parent = {self.start_hub: None}
 
         count = 0
         while (min_queue):
@@ -106,15 +106,15 @@ class Map:
 
             for neighbor in current.next:
                 new_cost = cost + neighbor.cost
-                if neighbor == hub_to_add:
-                    new_cost += 1
                 if new_cost < dist[neighbor] and not neighbor.zone == TypeZone.BLOCKED.value:
                     dist[neighbor] = new_cost
                     heapq.heappush(min_queue, (new_cost, count, neighbor))
                     count += 1
                     parent[neighbor] = current
+
         hub = self.end_hub
         path = []
+
         while hub:
             path.append(hub)
             hub = parent[hub]
@@ -126,21 +126,28 @@ class Map:
 
 
     def simulate_turn(self):
+        #sempre que eu usar "d.path[d.hub_idx]" estou me referindo ao hub atual que o drone esta
         for d in self.drones:
-            print(d.id, d.path[d.hub_idx].name)
+            print(f"{d.id} ({d.path[d.hub_idx].cost}) {d.path[d.hub_idx].name}")
 
             if d.path[d.hub_idx].end:
                 d.delivered = True
                 print(f"drone: {d.id} delivered")
                 continue
+
             elif self.drone_can_advance(d):
                 #diminui o n drones do hub atual
                 d.path[d.hub_idx].qnty_drones -= 1
                 d.hub_idx += 1
                 #aumenta a qnty de drones no proximo
                 d.path[d.hub_idx].qnty_drones += 1
+
             else:
-                print(d.id, "drone wait")
-
-            
-
+                if d.path[d.hub_idx].qnty_drones < 2:
+                    print(d.id, "drone wait")
+                else:
+                    turns_wait = 0
+                    for dd in d.path[d.hub_idx].qnty_drones:
+                        if d == dd:
+                            d.path = self.dijkstra((d.path[d.hub_idx + 1], turns_wait))
+                        turns_wait += 1

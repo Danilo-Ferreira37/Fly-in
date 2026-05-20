@@ -68,3 +68,21 @@ def pathfind_base(self):
         for p in path:
             print(p.name)
         return path
+
+
+    def simulate_turn(self):
+        for d in self.drones:
+            print(d.id, d.path[d.hub_idx].name)
+
+            if d.path[d.hub_idx].end:
+                d.delivered = True
+                print(f"drone: {d.id} delivered")
+                continue
+            elif self.drone_can_advance(d):
+                #diminui o n drones do hub atual
+                d.path[d.hub_idx].qnty_drones -= 1
+                d.hub_idx += 1
+                #aumenta a qnty de drones no proximo
+                d.path[d.hub_idx].qnty_drones += 1
+            else:
+                print(d.id, "drone wait")
