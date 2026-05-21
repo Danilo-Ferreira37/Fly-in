@@ -29,7 +29,7 @@ class MetaData(Enum):
 
     @staticmethod
     def valid_color(color):
-        return color in ["blue", "green", 'yellow', 'red', 'ciane', 'white', 'purple', 'orange', 'gray']
+        return color in ["blue", "green", 'yellow', 'red', 'cyan', 'white', 'purple', 'orange', 'gray', 'pink', 'magenta']
 
 
 class ConfigParser:

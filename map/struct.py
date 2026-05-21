@@ -13,7 +13,8 @@ class Drone:
 
         self.path = path
         self.hub_idx = 0
-        
+        self.state = ""
+        self.wait_turns = 0
 
 class Hub:
     def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
@@ -56,7 +57,7 @@ class Connection:
     def __repr__(self):
         return f"Connection({self.origin.name} -> {self.destiny.name}, max_cap: {self.max_link_cap})"
 
-
+turn = 0
 class Map:
     def __init__(self, config: dict):
         self.start_hub = Hub(config["start_hub"]["name"],
@@ -87,9 +88,7 @@ class Map:
             self.simulate_turn()
 
 
-    def dijkstra(self, haddcost: Tuple[Hub, int] = False):
-        if haddcost:
-            haddcost[0].cost += haddcost[1]
+    def dijkstra(self):
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
         min_queue = [(0, 0, self.start_hub)]
@@ -127,27 +126,34 @@ class Map:
 
     def simulate_turn(self):
         #sempre que eu usar "d.path[d.hub_idx]" estou me referindo ao hub atual que o drone esta
+        global turn
+        print("\nCurrent turn", turn)
+        turn += 1
         for d in self.drones:
-            print(f"{d.id} ({d.path[d.hub_idx].cost}) {d.path[d.hub_idx].name}")
-
             if d.path[d.hub_idx].end:
                 d.delivered = True
                 print(f"drone: {d.id} delivered")
                 continue
+            print(f"{d.id} ({d.path[d.hub_idx].cost}) {d.path[d.hub_idx].name}")
+            if getattr(d, 'wait_turns', 0) > 0:
+                d.wait_turns -= 1
+                print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
+                continue
 
-            elif self.drone_can_advance(d):
+
+
+            if self.drone_can_advance(d):
                 #diminui o n drones do hub atual
                 d.path[d.hub_idx].qnty_drones -= 1
+
                 d.hub_idx += 1
+
                 #aumenta a qnty de drones no proximo
                 d.path[d.hub_idx].qnty_drones += 1
+                print(d.id, "advance to", d.path[d.hub_idx].name)
 
+            if getattr(d.path[d.hub_idx], 'zone', None) == 'restricted':
+                d.wait_turns = 1
+                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].name} -> will wait 1 extra turn")
             else:
-                if d.path[d.hub_idx].qnty_drones < 2:
-                    print(d.id, "drone wait")
-                else:
-                    turns_wait = 0
-                    for dd in d.path[d.hub_idx].qnty_drones:
-                        if d == dd:
-                            d.path = self.dijkstra((d.path[d.hub_idx + 1], turns_wait))
-                        turns_wait += 1
+                print(d.id, "drone wait")
