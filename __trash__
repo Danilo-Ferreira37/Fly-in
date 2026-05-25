@@ -86,3 +86,48 @@ def pathfind_base(self):
                 d.path[d.hub_idx].qnty_drones += 1
             else:
                 print(d.id, "drone wait")
+
+[Connection(start -> A, max_cap: 2), Connection(A -> C, max_cap: 1), Connection(C -> E, max_cap: 1), Connection(E -> goal, max_cap: 1)]
+
+Current turn 1 
+
+D1 start
+D1 advance to A
+
+D2 start
+D2 drone wait
+
+
+Current turn 2 
+
+D1 A
+D1 advance to C
+
+D2 start
+D2 advance to A
+
+
+Current turn 3 
+
+D1 C
+D1 advance to E
+
+D2 A
+D2 advance to C
+
+
+Current turn 4 
+
+D1 E
+D1 advance to goal
+drone: D1 delivered
+D2 C
+D2 advance to E
+
+
+Current turn 5 
+
+drone: D1 delivered
+D2 E
+D2 advance to goal
+drone: D2 delivered

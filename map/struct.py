@@ -15,6 +15,7 @@ class Drone:
         self.hub_idx = 0
         self.state = ""
         self.wait_turns = 0
+        self.already_wait = False
 
 class Hub:
     def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
@@ -52,7 +53,9 @@ class Connection:
         self.destiny = to_hub
         to_hub.prev.append(from_hub)
 
-        self.max_link_cap = metadata.get("max_link_capacity", 1)
+        self.max_l_c = int(metadata.get("max_link_capacity", 1))
+        self.current_drones = 0
+
 
     def __repr__(self):
         return f"Connection({self.origin.name} -> {self.destiny.name}, max_cap: {self.max_link_cap})"
@@ -82,8 +85,13 @@ class Map:
                 elif c["to"] == hub.name:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
-        self.path = self.dijkstra()
+        
+        self.hub_path = self.dijkstra()
+        self.path = []
+        self.get_path_connection()
         self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub, self.path) for d in range(config["nb_drones"])]
+
+        
         while any(not d.delivered for d in self.drones):
             self.simulate_turn()
 
@@ -121,39 +129,60 @@ class Map:
         return path
 
     def drone_can_advance(self, drone: Drone):
-        return drone.path[drone.hub_idx + 1].can_drone_receive()
+        return drone.path[drone.hub_idx].destiny.can_drone_receive() and drone.path[drone.hub_idx].current_drones < drone.path[drone.hub_idx].max_l_c
 
+
+    def get_path_connection(self):
+        for i in range(len(self.hub_path)):
+            for c in self.connections:
+                try:
+                    if c.origin is self.hub_path[i] and c.destiny is self.hub_path[i + 1]:
+                        self.path.append(c)
+                except IndexError:
+                    pass
 
     def simulate_turn(self):
         #sempre que eu usar "d.path[d.hub_idx]" estou me referindo ao hub atual que o drone esta
         global turn
-        print("\nCurrent turn", turn)
         turn += 1
+
+        print("\nCurrent turn", turn, "\n")
+        
         for d in self.drones:
-            if d.path[d.hub_idx].end:
+            if d.path[d.hub_idx].origin.end:
                 d.delivered = True
                 print(f"drone: {d.id} delivered")
                 continue
-            print(f"{d.id} ({d.path[d.hub_idx].cost}) {d.path[d.hub_idx].name}")
+            print(f"{d.id} {d.path[d.hub_idx].origin.name}")
             if getattr(d, 'wait_turns', 0) > 0:
                 d.wait_turns -= 1
                 print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
                 continue
 
 
-
             if self.drone_can_advance(d):
                 #diminui o n drones do hub atual
-                d.path[d.hub_idx].qnty_drones -= 1
-
+                d.path[d.hub_idx].origin.qnty_drones -= 1
                 d.hub_idx += 1
-
+                d.already_wait = False
                 #aumenta a qnty de drones no proximo
-                d.path[d.hub_idx].qnty_drones += 1
-                print(d.id, "advance to", d.path[d.hub_idx].name)
+                d.path[d.hub_idx].origin.qnty_drones += 1
 
-            if getattr(d.path[d.hub_idx], 'zone', None) == 'restricted':
-                d.wait_turns = 1
-                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].name} -> will wait 1 extra turn")
+                print(d.id, "advance to", d.path[d.hub_idx].origin.name)
+
             else:
                 print(d.id, "drone wait")
+            if getattr(d.path[d.hub_idx].origin, 'zone', None) == 'restricted' and not getattr(d, 'already_wait', None):
+                d.wait_turns = 1
+                d.already_wait = True
+                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].origin.name} -> will wait 1 extra turn")
+            elif d.path[d.hub_idx].origin.end:
+                d.delivered = True
+                print(f"drone: {d.id} delivered")
+                continue
+
+            print()
+
+
+
+

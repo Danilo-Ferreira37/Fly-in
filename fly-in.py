@@ -1,11 +1,11 @@
 from parser.parsing import ConfigParser
 from map.struct import Map, Drone
 import os
-
+import sys
 
 def main():
     os.system("clear")
-    config = ConfigParser("config.txt")
+    config = ConfigParser(sys.argv[1])
     info = config.load_file()
     info: dict
 

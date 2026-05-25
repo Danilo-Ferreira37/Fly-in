@@ -29,7 +29,7 @@ class MetaData(Enum):
 
     @staticmethod
     def valid_color(color):
-        return color in ["blue", "green", 'yellow', 'red', 'cyan', 'white', 'purple', 'orange', 'gray', 'pink', 'magenta']
+        return color in ["blue", "green",'crimson', 'yellow', 'red', 'cyan', 'white','black', 'rainbow','violet', 'maroon','darkred', 'purple', 'orange', 'gray', 'pink', 'magenta', 'lime', 'gold', 'brown']
 
 
 class ConfigParser:
@@ -68,6 +68,8 @@ class ConfigParser:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
             key, value = (info.strip() for info in d.split("=", 1))
+            if key in metadata:
+                raise ParsingError("The metadata cannot has a repeated key!")
             if conx and key != MetaData.MAX_LINK_CAPACITY.value:
                 raise ParsingError("The connection only can has 'max_link_capacity' metadata")
             if not MetaData.has_value(key):
@@ -123,8 +125,6 @@ class ConfigParser:
                 cord = (int(line[1]), int(line[2]))
                 if cord in self.hub_coordinades:
                     raise ParsingError("The hub coordinades must be differents!")
-                if cord[0] < 0 or cord[1] < 0:
-                    raise ValueError
                 self.hub_coordinades.add(cord)
                 if hub:
                     return {line[0].strip(): {"X/Y": cord, "metadata": metadata}}
@@ -134,12 +134,14 @@ class ConfigParser:
                 data = line.split(":", 1)[1].strip()
                 data, metadata = self.split_metadata(data, True)
                 hub_from, hub_to = (hub.strip() for hub in data.split("-", 1))
+                if hub_from == hub_to:
+                    raise ParsingError("The connection must to be made with differents hubs")
                 if hub_from not in self.hub_names or hub_to not in self.hub_names:
                     raise ParsingError("The connections need to be made with existing hubs")
                 return {"from": hub_from, "to": hub_to, "metadata": metadata}
 
         except ValueError:
-            print(f"Error: The nb_drones, X/Y coordinades, max_drones and limits_capacity value must be a positive integer!")
+            print(f"Error: The nb_drones, max_drones and limits_capacity value must be positive integers and X/Y coordinades integers!")
             exit(1)
         except ParsingError as e:
             print(f"Error: {e}")
