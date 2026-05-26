@@ -5,15 +5,14 @@ import heapq
 
 
 class Drone:
-    def __init__(self, id: str, start_h: "Hub", end_h: "Hub", path: list["Hub"]) -> None:
+    def __init__(self, id: str, start_h: "Hub", path: list["Hub"]) -> None:
         self.id = id
         self.current_hub = start_h
-        self.goal = end_h
         self.delivered = False
 
         self.path = path
         self.hub_idx = 0
-        self.state = ""
+        self.in_connec = False
         self.wait_turns = 0
         self.already_wait = False
 
@@ -86,11 +85,11 @@ class Map:
                     to_h = hub
             self.connections.append(Connection(from_h, to_h, c["metadata"]))
         
+        
         self.hub_path = self.dijkstra()
         self.path = []
         self.get_path_connection()
-        self.drones = [Drone(f"D{d + 1}", self.start_hub, self.end_hub, self.path) for d in range(config["nb_drones"])]
-
+        self.drones = [Drone(f"D{d + 1}", self.start_hub, self.path) for d in range(config["nb_drones"])]
         
         while any(not d.delivered for d in self.drones):
             self.simulate_turn()
@@ -128,10 +127,12 @@ class Map:
         path.reverse()
         return path
 
-    def drone_can_advance(self, drone: Drone):
-        return drone.path[drone.hub_idx].destiny.can_drone_receive() and drone.path[drone.hub_idx].current_drones < drone.path[drone.hub_idx].max_l_c
+    def drone_can_advance_connec(self, drone: Drone):
+        return drone.path[drone.hub_idx].current_drones < drone.path[drone.hub_idx].max_l_c
 
-
+    def drone_can_advance_hub(self, drone: Drone):
+        return drone.path[drone.hub_idx + 1].origin.can_drone_receive()
+    
     def get_path_connection(self):
         for i in range(len(self.hub_path)):
             for c in self.connections:
@@ -140,8 +141,9 @@ class Map:
                         self.path.append(c)
                 except IndexError:
                     pass
+        self.path.append(Connection(self.end_hub, self.end_hub, {}))
 
-    def simulate_turn(self):
+    def simulate_turnoo(self):
         #sempre que eu usar "d.path[d.hub_idx]" estou me referindo ao hub atual que o drone esta
         global turn
         turn += 1
@@ -159,12 +161,16 @@ class Map:
                 print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
                 continue
 
-
-            if self.drone_can_advance(d):
+            print(d.path[d.hub_idx].current_drones)
+            if self.drone_can_advance_hub(d):
                 #diminui o n drones do hub atual
                 d.path[d.hub_idx].origin.qnty_drones -= 1
+                print(d.path[d.hub_idx].current_drones)
+                d.path[d.hub_idx].current_drones -= 2
                 d.hub_idx += 1
                 d.already_wait = False
+                d.path[d.hub_idx].current_drones += 1
+                print(d.path[d.hub_idx].current_drones)
                 #aumenta a qnty de drones no proximo
                 d.path[d.hub_idx].origin.qnty_drones += 1
 
@@ -180,9 +186,46 @@ class Map:
                 d.delivered = True
                 print(f"drone: {d.id} delivered")
                 continue
-
             print()
 
 
 
+    def simulate_turn(self):
+        global turn
+        turn += 1
 
+        print("\nCurrent turn", turn, "\n")
+        
+        for d in self.drones:
+            if d.path[d.hub_idx].origin.end:
+                d.delivered = True
+                print(f"drone: {d.id} delivered")
+                continue
+            
+            print(f"{d.id} {d.current_hub.name}")
+            if getattr(d, 'wait_turns', 0) > 0:
+                d.wait_turns -= 1
+                print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
+                continue
+            
+            if self.drone_can_advance_connec(d) and not d.in_connec:
+                d.in_connec = True
+                d.path[d.hub_idx].current_drones += 1
+                print(f"{d.id} is in connection {d.hub_idx}")
+                
+            if self.drone_can_advance_hub(d) and d.in_connec:
+                d.in_connec = False
+                d.path[d.hub_idx].current_drones -= 1
+
+                d.current_hub.qnty_drones -= 1
+                d.hub_idx += 1
+                d.current_hub = d.path[d.hub_idx].origin
+                d.current_hub.qnty_drones += 1
+                print(d.id, "advance to", d.path[d.hub_idx].origin.name)
+            else:
+                print(f"{d.id} wait!")
+            if getattr(d.path[d.hub_idx].origin, 'zone', None) == 'restricted' and not getattr(d, 'already_wait', None):
+                d.wait_turns = 1
+                d.already_wait = True
+                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].origin.name} -> will wait 1 extra turn")
+            print()

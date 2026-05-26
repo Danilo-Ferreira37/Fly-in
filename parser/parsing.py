@@ -163,6 +163,8 @@ class ConfigParser:
         if line.startswith("nb_drones"):
             if "nb_drones" in self.parse_key:
                 raise ValueError("There can only be one nb_drones key in the file!")
+            if self.config:
+                raise ValueError("The nb_drones must to be the first line if config in the file!")
             key = line.split(":", 1)[0]
             self.parse_key.add(key.strip())
             self.config[key] = self.parse_line(line)

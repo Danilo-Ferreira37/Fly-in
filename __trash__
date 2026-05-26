@@ -322,3 +322,35 @@ class Map:
 
 
 /////
+
+
+    def simulate_turn(self):
+        global turn
+        turn += 1
+
+        print("\nCurrent turn", turn, "\n")
+        
+        for d in self.drones:
+            if d.path[d.hub_idx].origin.end:
+                d.delivered = True
+                print(f"drone: {d.id} delivered")
+                continue
+            
+            print(f"{d.id} {d.current_hub.name}")
+            if getattr(d, 'wait_turns', 0) > 0:
+                d.wait_turns -= 1
+                print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
+                continue
+            if self.drone_can_advance_connec(d) and not d.in_connec:
+                d.in_connec = True
+                d.path[d.hub_idx].current_drones += 1
+                print(f"{d.id} is in connection {d.hub_idx}")
+            
+            if self.drone_can_advance_hub(d):
+                if d.current_hub == d.path[d.hub_idx].destiny:
+                    d.hub_idx += 1
+                else:
+                    d.current_hub = d.path[d.hub_idx].destiny
+
+
+////
