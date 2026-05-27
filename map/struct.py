@@ -7,10 +7,12 @@ import heapq
 class Drone:
     def __init__(self, id: str, start_h: "Hub", path: list["Hub"]) -> None:
         self.id = id
-        self.current_hub = start_h
+        
         self.delivered = False
 
         self.path = path
+        self.current_hub = start_h
+        self.next_hub = path[0].destiny
         self.hub_idx = 0
         self.in_connec = False
         self.wait_turns = 0
@@ -23,9 +25,12 @@ class Hub:
         self.metadata = metadata
         self.color = metadata.get("color")
         self.zone = metadata.get("zone", "normal")
-        self.cost = 1 if self.zone in ("normal", "priority") else 2
+        self.cost = 1 if self.zone in ("normal") else 2
+        if self.zone in ("priority"):
+            self.cost = 0.9
         self.max_drones = metadata.get("max_drones", 1)
 
+        self.reserved_drones = []
         self.qnty_drones = 0
         self.start = (start)
         self.end = (end)
@@ -94,13 +99,15 @@ class Map:
         while any(not d.delivered for d in self.drones):
             self.simulate_turn()
 
+        print("ALL DRONES DELIVERED!!")
 
-    def dijkstra(self):
+    def dijkstra(self, blocked_hub: Hub = None):
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
         min_queue = [(0, 0, self.start_hub)]
         parent = {self.start_hub: None}
-
+        if blocked_hub:
+            blocked_hub.zone = TypeZone.BLOCKED.value
         count = 0
         while (min_queue):
             cost, _, current = heapq.heappop(min_queue)
@@ -120,19 +127,13 @@ class Map:
 
         hub = self.end_hub
         path = []
-
+        print(dist[self.end_hub])
         while hub:
             path.append(hub)
             hub = parent[hub]
         path.reverse()
         return path
 
-    def drone_can_advance_connec(self, drone: Drone):
-        return drone.path[drone.hub_idx].current_drones < drone.path[drone.hub_idx].max_l_c
-
-    def drone_can_advance_hub(self, drone: Drone):
-        return drone.path[drone.hub_idx + 1].origin.can_drone_receive()
-    
     def get_path_connection(self):
         for i in range(len(self.hub_path)):
             for c in self.connections:
@@ -143,89 +144,118 @@ class Map:
                     pass
         self.path.append(Connection(self.end_hub, self.end_hub, {}))
 
-    def simulate_turnoo(self):
-        #sempre que eu usar "d.path[d.hub_idx]" estou me referindo ao hub atual que o drone esta
-        global turn
-        turn += 1
 
-        print("\nCurrent turn", turn, "\n")
-        
-        for d in self.drones:
-            if d.path[d.hub_idx].origin.end:
-                d.delivered = True
-                print(f"drone: {d.id} delivered")
-                continue
-            print(f"{d.id} {d.path[d.hub_idx].origin.name}")
-            if getattr(d, 'wait_turns', 0) > 0:
-                d.wait_turns -= 1
-                print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
-                continue
+    def drone_can_advance_connec(self, drone: Drone) -> bool:
+        """Verifica se a conexão tem espaço"""
+        if drone.hub_idx >= len(self.path):
+            return False
+        return self.path[drone.hub_idx].current_drones < self.path[drone.hub_idx].max_l_c
 
-            print(d.path[d.hub_idx].current_drones)
-            if self.drone_can_advance_hub(d):
-                #diminui o n drones do hub atual
-                d.path[d.hub_idx].origin.qnty_drones -= 1
-                print(d.path[d.hub_idx].current_drones)
-                d.path[d.hub_idx].current_drones -= 2
-                d.hub_idx += 1
-                d.already_wait = False
-                d.path[d.hub_idx].current_drones += 1
-                print(d.path[d.hub_idx].current_drones)
-                #aumenta a qnty de drones no proximo
-                d.path[d.hub_idx].origin.qnty_drones += 1
 
-                print(d.id, "advance to", d.path[d.hub_idx].origin.name)
-
-            else:
-                print(d.id, "drone wait")
-            if getattr(d.path[d.hub_idx].origin, 'zone', None) == 'restricted' and not getattr(d, 'already_wait', None):
-                d.wait_turns = 1
-                d.already_wait = True
-                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].origin.name} -> will wait 1 extra turn")
-            elif d.path[d.hub_idx].origin.end:
-                d.delivered = True
-                print(f"drone: {d.id} delivered")
-                continue
-            print()
-
+    def drone_can_advance_hub(self, drone: Drone) -> bool:
+        """Verifica se o hub de destino tem espaço (ou drone já reservou)"""
+        if drone.hub_idx >= len(self.path):
+            return False
+        next_hub = self.path[drone.hub_idx].destiny
+        return next_hub.can_drone_receive() or drone in next_hub.reserved_drones
 
 
     def simulate_turn(self):
         global turn
         turn += 1
-
-        print("\nCurrent turn", turn, "\n")
+        print(f"\nCurrent turn {turn}\n")
         
         for d in self.drones:
-            if d.path[d.hub_idx].origin.end:
+            print(f"{d.id} {d.current_hub.name}")
+            
+            # ===== FASE 1: Verificar se entregue =====
+            if d.current_hub == self.end_hub:
                 d.delivered = True
                 print(f"drone: {d.id} delivered")
+                print()
                 continue
             
-            print(f"{d.id} {d.current_hub.name}")
-            if getattr(d, 'wait_turns', 0) > 0:
+            # ===== FASE 2: Verificar limite de caminho =====
+            if d.hub_idx >= len(self.path):
+                d.delivered = True
+                print()
+                continue
+            
+            # ===== FASE 3: Definir próximo hub =====
+            d.next_hub = self.path[d.hub_idx].destiny
+            
+            # ===== FASE 4: Processar espera em zona restrita =====
+            if d.wait_turns > 0:
                 d.wait_turns -= 1
-                print(f"{d.id} waiting extra turn ({d.wait_turns} left)")
+                print(f"{d.id} waiting in transit ({d.wait_turns} turns left)")
+                if d.wait_turns == 0:
+                    # Terminou o trânsito, avança para a zona restrita
+                    d.in_connec = False
+                    self.path[d.hub_idx].current_drones -= 1
+                    d.current_hub.qnty_drones -= 1
+                    
+                    d.hub_idx += 1
+                    d.current_hub = d.next_hub
+                    d.current_hub.qnty_drones += 1
+                    
+                    # Liberta a reserva E decrementa qnty_drones
+                    if d in d.next_hub.reserved_drones:
+                        d.next_hub.reserved_drones.remove(d)
+                        d.next_hub.qnty_drones -= 1  # ← IMPORTANTE!
+                    d.already_wait = False
+                    print(f"{d.id} arrived at {d.current_hub.name}")
+                print()
                 continue
             
-            if self.drone_can_advance_connec(d) and not d.in_connec:
-                d.in_connec = True
-                d.path[d.hub_idx].current_drones += 1
-                print(f"{d.id} is in connection {d.hub_idx}")
+            # ===== FASE 5: Tentar sair de conexão (normal/priority) =====
+            if d.in_connec and d.wait_turns == 0:
+                if self.drone_can_advance_hub(d):
+                    d.current_hub.qnty_drones -= 1
+                    d.in_connec = False
+                    self.path[d.hub_idx].current_drones -= 1
+                    
+                    d.hub_idx += 1
+                    d.current_hub = d.next_hub
+                    d.current_hub.qnty_drones += 1
+                    
+                    # Liberta reserva E decrementa qnty_drones
+                    if d in d.next_hub.reserved_drones:
+                        d.next_hub.reserved_drones.remove(d)
+                        d.next_hub.qnty_drones -= 1  # ← IMPORTANTE!
+                    d.already_wait = False
+                    
+                    print(f"{d.id} advance to {d.current_hub.name}")
+                    if d.current_hub == self.end_hub:
+                        d.delivered = True
+                else:
+                    print(f"{d.id} blocked (hub full)")
+                print()
+                continue
+            
+            # ===== FASE 6: Tentar entrar em conexão =====
+            if not d.in_connec:
+                can_use_conn = self.drone_can_advance_connec(d)
+                can_use_hub = self.drone_can_advance_hub(d)
                 
-            if self.drone_can_advance_hub(d) and d.in_connec:
-                d.in_connec = False
-                d.path[d.hub_idx].current_drones -= 1
-
-                d.current_hub.qnty_drones -= 1
-                d.hub_idx += 1
-                d.current_hub = d.path[d.hub_idx].origin
-                d.current_hub.qnty_drones += 1
-                print(d.id, "advance to", d.path[d.hub_idx].origin.name)
-            else:
-                print(f"{d.id} wait!")
-            if getattr(d.path[d.hub_idx].origin, 'zone', None) == 'restricted' and not getattr(d, 'already_wait', None):
-                d.wait_turns = 1
-                d.already_wait = True
-                print(f"{d.id} entered restricted zone {d.path[d.hub_idx].origin.name} -> will wait 1 extra turn")
+                # Zona restrita - RESERVA APENAS SE TIVER ESPAÇO
+                if d.next_hub.zone == 'restricted' and not d.already_wait:
+                    if can_use_conn and can_use_hub:
+                        d.in_connec = True
+                        self.path[d.hub_idx].current_drones += 1
+                        d.wait_turns = 1
+                        d.already_wait = True
+                        d.next_hub.reserved_drones.append(d)
+                        d.next_hub.qnty_drones += 1
+                        print(f"{d.id} entering restricted zone {d.next_hub.name} (2 turn transit)")
+                    else:
+                        print(f"{d.id} waiting (restricted zone full)")
+                else:
+                    # Zona normal ou priority
+                    if can_use_conn and can_use_hub:
+                        d.in_connec = True
+                        self.path[d.hub_idx].current_drones += 1
+                        print(f"{d.id} entering connection to {d.next_hub.name}")
+                    else:
+                        print(f"{d.id} waiting")
+            
             print()
