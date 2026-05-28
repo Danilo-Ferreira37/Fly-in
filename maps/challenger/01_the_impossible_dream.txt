@@ -49,17 +49,17 @@ hub: overflow_hell6 9 -1 [zone=restricted color=maroon max_drones=2]
 
 # === LAYER 3: The False Hope Section ===
 # Priority zones that lead to more traps
-hub: false_hope1 10 0 [zone=priority color=gold max_drones=3]
-hub: false_hope2 11 0 [zone=priority color=gold max_drones=2]
-hub: false_hope3 12 0 [zone=priority color=gold max_drones=1]
+hub: false_hope1 10 0 [zone=restricted color=gold max_drones=3]
+hub: false_hope2 11 0 [zone=restricted color=gold max_drones=2]
+hub: false_hope3 12 0 [zone=restricted color=gold max_drones=1]
 
 # More dead ends disguised as good paths
-hub: priority_trap1 10 1 [zone=priority color=gold]
-hub: priority_trap2 11 1 [zone=priority color=gold]
+hub: priority_trap1 10 1 [zone=restricted color=gold]
+hub: priority_trap2 11 1 [zone=restricted color=gold]
 hub: priority_dead 12 1 [color=black]
 
-hub: priority_trap3 10 -1 [zone=priority color=gold]
-hub: priority_trap4 11 -1 [zone=priority color=gold]
+hub: priority_trap3 10 -1 [zone=restricted color=gold]
+hub: priority_trap4 11 -1 [zone=restricted color=gold]
 hub: priority_dead2 12 -1 [color=black]
 
 # === LAYER 4: The Convergence Hell ===

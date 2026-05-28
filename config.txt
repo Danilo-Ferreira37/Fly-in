@@ -4,7 +4,7 @@ nb_drones: 2
 start_hub: start 5 0 [color=red]
 end_hub: goal 10 10 [color=yellow]
 
-hub: A 3 4 [zone=restricted color=red max_drones=3]
+hub: A 3 4 [zone=restricted color=red max_drones=1]
 hub: B 6 2 [zone=restricted color=blue max_drones=2]
 hub: C 6 3 [zone=restricted color=red]
 hub: D 0 9 [zone=restricted color=red]

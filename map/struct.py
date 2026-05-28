@@ -2,8 +2,10 @@ from typing import Tuple
 from parser import MetaData , TypeZone
 from collections import deque
 import heapq
-
-
+YELLOW = "\033[33m"
+GREEN = "\033[32m"
+RED = "\033[31m"
+RESET = "\033[0m"
 class Drone:
     def __init__(self, id: str, path: list["Hub"]) -> None:
         self.id = id
@@ -125,7 +127,6 @@ class Map:
         return connec_path
 
 
-
     def dijkstra(self, blocked_hub: Hub = None):
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
@@ -153,19 +154,18 @@ class Map:
         
         hub = self.end_hub
         hub_path = []
+        if blocked_hub:
+            blocked_hub.zone = true_zone
         while hub:
             hub_path.append(hub)
-
             hub = parent[hub]
         hub_path.reverse()
         
-        if blocked_hub:
-            blocked_hub.zone = true_zone
+
         
         connec_path = self.get_path_connection(hub_path)
         #retorno o caminho e o custo
         return connec_path, dist[self.end_hub]
-
 
 
     def drone_can_advance_connec(self, drone: Drone) -> bool:
@@ -245,12 +245,12 @@ class Map:
                     # Liberta a conexão imediatamente
                     d.path[d.connec_idx - 1].current_drones -= 1
                     
-                    print(f"{d.id} advance to {d.current_hub.name} (1 turn)")
+                    print(f"{GREEN}{d.id} advance to {d.current_hub.name} (1 turn){RESET}")
                     if d.current_hub == self.end_hub:
                         d.delivered = True
                 else:
                     reason = "connection full" if not can_use_conn else "hub full"
-                    print(f"{d.id} waiting ({reason})")
+                    print(f"{YELLOW}{d.id} waiting ({reason}){RESET}")
                 print()
                 continue
             
@@ -267,10 +267,10 @@ class Map:
                     d.already_wait = True
                     d.next_hub.reserved_drones.append(d)
                     d.next_hub.qnty_drones += 1
-                    print(f"{d.id} will to enter in a restricted zone {d.next_hub.name} (2 turn transit)")
-                    print(f"{d.id} waiting in restricted zone transit ({d.wait_turns} turns left)")
+                    print(f"{RED}{d.id} will to enter in a restricted zone {d.next_hub.name} (2 turn transit)")
+                    print(f"{d.id} waiting in restricted zone transit ({d.wait_turns} turns left){RESET}")
                 else:
-                    print(f"{d.id} waiting (restricted zone full)")
+                    print(f"{YELLOW}{d.id} waiting (restricted zone full){RESET}")
                 print()
                 continue
             
@@ -281,6 +281,6 @@ class Map:
                 continue
             
             # Caso não se encaixe em nenhuma fase
-            print(f"{d.id} waiting")
+            print(f"{d.id} waiting ")
             print()
 
