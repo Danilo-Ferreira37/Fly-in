@@ -1,7 +1,9 @@
 from parser.parsing import ConfigParser
-from map.struct import Map, Drone
+from output.visualizer import Visualizer
+from fly_struct.map import Map
 import os
 import sys
+
 
 def main():
     os.system("clear")
@@ -9,11 +11,9 @@ def main():
     info = config.load_file()
     info: dict
 
-    struct = Map(info)
-    #for h in struct.hubs:
-    #    print(h.max_drones, h.zone)
-    #print(struct.connections)
-
+    map = Map(info)
+    vizu = Visualizer(map, 1400, 900)
+    vizu.run()
 
 if __name__ == "__main__":
     main()

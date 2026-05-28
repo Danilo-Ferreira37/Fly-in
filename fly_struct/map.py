@@ -1,67 +1,11 @@
-from typing import Tuple
-from parser import MetaData , TypeZone
-from collections import deque
+from fly_struct import Drone, Hub, Connection
+from parser import TypeZone
 import heapq
+
 YELLOW = "\033[33m"
 GREEN = "\033[32m"
 RED = "\033[31m"
 RESET = "\033[0m"
-class Drone:
-    def __init__(self, id: str, path: list["Hub"]) -> None:
-        self.id = id
-        self.delivered = False
-
-        self.path = path
-        self.current_hub = path[0].origin
-        self.next_hub = path[0].destiny
-        self.connec_idx = 0
-        self.in_connec = False
-        self.wait_turns = 0
-        self.already_wait = False
-
-class Hub:
-    def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
-        self.name = name
-        self.coord = coord
-        self.metadata = metadata
-        self.color = metadata.get("color")
-        self.zone = metadata.get("zone", "normal")
-        self.cost = 1 if self.zone in ("normal") else 2
-        if self.zone in ("priority"):
-            self.cost = 0.9
-        self.max_drones = metadata.get("max_drones", 1)
-
-        self.reserved_drones = []
-        self.qnty_drones = 0
-        self.start = (start)
-        self.end = (end)
-        if start or end:
-            self.max_drones = float("inf")
-        self.next = []
-
-    def can_drone_receive(self) -> bool:
-        return self.qnty_drones < self.max_drones
-
-    def __repr__(self):
-        if self.start:
-            return f"Hub_start: {self.name}  {self.coord} {self.metadata}"
-        elif self.end:
-            return f"Hub_end: {self.name}  {self.coord} {self.metadata}"
-        return f"{self.name}  {self.coord} {self.metadata}"
-
-
-class Connection:
-    def __init__(self, from_hub: Hub, to_hub: Hub, metadata: dict):
-        self.origin = from_hub
-        from_hub.next.append(to_hub)
-        self.destiny = to_hub
-
-        self.max_l_c = int(metadata.get("max_link_capacity", 1))
-        self.current_drones = 0
-
-    def __repr__(self):
-        return f"Conn {self.origin.name} -> {self.destiny.name}, {self.max_l_c})"
-
 
 turn = 0
 class Map:
@@ -169,7 +113,6 @@ class Map:
 
 
     def drone_can_advance_connec(self, drone: Drone) -> bool:
-        """Verifica se a conexão tem espaço"""
         if drone.connec_idx >= len(drone.path):
             return False
         return drone.path[drone.connec_idx].current_drones < drone.path[drone.connec_idx].max_l_c
@@ -186,7 +129,7 @@ class Map:
     def simulate_turn(self):
         global turn
         turn += 1
-        print(f"\nCurrent turn {turn}\n")
+        print(f"Current turn {turn}\n")
         
         for d in self.drones:
             # Verificar se entregue 
@@ -199,7 +142,6 @@ class Map:
             #Verificar limite de caminho
             if d.connec_idx >= len(d.path):
                 d.delivered = True
-                print()
                 continue
             
             #Definir próximo hub
@@ -225,7 +167,6 @@ class Map:
                     d.in_connec = False
                     d.already_wait = False
                     print(f"{d.id} arrived at {d.current_hub.name} (restricted)")
-                print()
                 continue
             
             # Tentar avançar para zona NORMAL/PRIORITY (1 turn direto)
@@ -251,7 +192,6 @@ class Map:
                 else:
                     reason = "connection full" if not can_use_conn else "hub full"
                     print(f"{YELLOW}{d.id} waiting ({reason}){RESET}")
-                print()
                 continue
             
             # FASE 6: Tentar entrar em zona RESTRITA (2 turns)
@@ -271,16 +211,10 @@ class Map:
                     print(f"{d.id} waiting in restricted zone transit ({d.wait_turns} turns left){RESET}")
                 else:
                     print(f"{YELLOW}{d.id} waiting (restricted zone full){RESET}")
-                print()
                 continue
-            
             #FASE 7: Se em trânsito para restrita mas ainda esperando 
             if d.in_connec and d.wait_turns > 0:
                 print(f"{d.id} in transit to restricted zone ({d.wait_turns} turns left)")
-                print()
                 continue
-            
             # Caso não se encaixe em nenhuma fase
             print(f"{d.id} waiting ")
-            print()
-
