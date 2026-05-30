@@ -1,5 +1,5 @@
 from parser.parsing import ConfigParser
-from output.visualizer import Visualizer
+#from output.visualizer import Visualizer
 from fly_struct.map import Map
 import os
 import sys
@@ -12,8 +12,8 @@ def main():
     info: dict
 
     map = Map(info)
-    vizu = Visualizer(map, 1400, 900)
-    vizu.run()
+    #vizu = Visualizer(map, 1400, 900)
+    #vizu.run()
 
 if __name__ == "__main__":
     main()

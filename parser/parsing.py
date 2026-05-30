@@ -38,6 +38,7 @@ class ConfigParser:
         self.required = {"nb_drones", "start_hub", "end_hub", "hub", "connection"}
         self.parse_key = set()
         self.config = {}
+        self.connec_names = []
         self.hub_names = set()
         self.hub_coordinades = set()
 
@@ -95,7 +96,7 @@ class ConfigParser:
 
         return rest, metadata
 
-    def parse_line(self, line: str) -> None:
+    def parse_line(self, line: str) -> None | dict:
         try:
             hub = False
             if line.startswith("nb_drones"):
@@ -136,9 +137,11 @@ class ConfigParser:
                 hub_from, hub_to = (hub.strip() for hub in data.split("-", 1))
                 if hub_from == hub_to:
                     raise ParsingError("The connection must to be made with differents hubs")
-                if hub_from not in self.hub_names or hub_to not in self.hub_names:
-                    raise ParsingError("The connections need to be made with existing hubs")
-                return {"from": hub_from, "to": hub_to, "metadata": metadata}
+                
+                if not {hub_from, hub_to} in self.connec_names:
+                    self.connec_names.append({hub_from, hub_to})
+                    return {"from": hub_from, "to": hub_to, "metadata": metadata}
+            return None
 
         except ValueError:
             print(f"Error: The nb_drones, max_drones and limits_capacity value must be positive integers and X/Y coordinades integers!")
@@ -148,7 +151,7 @@ class ConfigParser:
             exit(1)
 
 
-    def split_parse_line(self, line: str):
+    def split_parse_line(self, line: str) -> None:
         line = line.strip()
         if not ":" in line:
             raise ValueError("Invalid configuration format!!\n"
@@ -192,7 +195,9 @@ class ConfigParser:
                 raise ParsingError("To make a connection you must put '-' between hub names")
             if not self.config.get("connection"):
                 self.config["connection"] = []
-            self.config["connection"].append(self.parse_line(line))
+            connection = self.parse_line(line)
+            if connection:
+                self.config["connection"].append(connection)
 
         else:
             raise ValueError(f"The file has a invalid key/value: '{line}'")
@@ -211,6 +216,9 @@ class ConfigParser:
                 raise ValueError(f"Insufficient keys, The program needs"
                                  f" the following keys: "
                                  f"{self.required - self.parse_key}")
+            for h_from, h_to in self.connec_names:
+                if h_to not in self.hub_names or h_from not in self.hub_names:
+                    raise ParsingError("The connections need to be made with existing hubs")
             return self.config
 
         except PermissionError:
