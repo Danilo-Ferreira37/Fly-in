@@ -1,13 +1,13 @@
 from typing import Tuple
 
 class Drone:
-    def __init__(self, id: str, path: list["Hub"]) -> None:
+    def __init__(self, id: str, path: list["Hub"], start_hub) -> None:
         self.id = id
         self.delivered = False
 
         self.path = path
-        self.current_hub = path[0].origin
-        self.next_hub = path[0].destiny
+        self.current_hub = path[0].get_current_hub(start_hub)
+        self.next_hub = path[0].get_next_hub(start_hub)
         self.connec_idx = 0
         self.in_connec = False
         self.wait_turns = 0
@@ -46,8 +46,8 @@ class Hub:
 
 class Connection:
     def __init__(self, from_hub: Hub, to_hub: Hub, metadata: dict):
-        self.origin = from_hub
-        self.destiny = to_hub
+        self.zone1 = from_hub
+        self.zone2 = to_hub
 
         from_hub.next.append(to_hub)
         to_hub.next.append(from_hub)
@@ -70,4 +70,4 @@ class Connection:
         return self.zone2
 
     def __repr__(self):
-        return f"Conn {self.origin.name} -> {self.destiny.name}, {self.max_l_c})"
+        return f"Conn {self.zone1.name} -> {self.zone2.name}, {self.max_l_c})"

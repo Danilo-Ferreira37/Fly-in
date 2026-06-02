@@ -17,6 +17,6 @@ connection: B-D
 connection: A-C [max_link_capacity=1]
 connection: C-E
 connection: D-E
-connection: E-goal
+connection: goal-E
 
 #connection: F-goal

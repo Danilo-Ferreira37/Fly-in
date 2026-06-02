@@ -41,8 +41,8 @@ class Map:
             exit(1)
         
         self.all_paths = self.get_all_paths()
-        self.drones = [Drone(f"D{d + 1}", self.all_paths[d % len(self.all_paths)]) for d in range(config["nb_drones"])]
-        #self.drones = [Drone(f"D{d + 1}", self.default_path) for d in range(config["nb_drones"])]
+        self.drones = [Drone(f"D{d + 1}", self.all_paths[d % len(self.all_paths)], self.start_hub) for d in range(config["nb_drones"])]
+        #self.drones = [Drone(f"D{d + 1}", self.default_path, self.start_hub) for d in range(config["nb_drones"])]
         
 
         while any(not d.delivered for d in self.drones):
@@ -62,24 +62,12 @@ class Map:
                 pass
         return all_paths
     
- #   def get_path_connection(self, hub_path):
- #       connec_path = []
- #       for i in range(len(hub_path)):
- #           for c in self.connections:
- #               try:
- #                   if c.get_current_hub(hub_path[i]) and c.get_current_hub(hub_path[i + 1]):
- #                       connec_path.append(c)
- #               except IndexError:
- #                   pass
- #       print(connec_path)
- #       return connec_path
-
     def get_path_connection(self, hub_path):
         connec_path = []
         for i in range(len(hub_path)):
             for c in self.connections:
                 try:
-                    if c.origin is hub_path[i] and c.destiny is hub_path[i + 1]:
+                    if c.get_current_hub(hub_path[i]) and c.get_current_hub(hub_path[i + 1]):
                         connec_path.append(c)
                 except IndexError:
                     pass
@@ -142,7 +130,7 @@ class Map:
         """Verifica se o hub de destino tem espaço (ou drone já reservou)"""
         if drone.connec_idx >= len(drone.path):
             return False
-        next_hub = drone.path[drone.connec_idx].destiny
+        next_hub = drone.path[drone.connec_idx].get_next_hub(drone.current_hub)
 
         return next_hub.can_drone_receive() or drone in next_hub.reserved_drones
 
@@ -160,10 +148,8 @@ class Map:
                 continue
             print(f"{d.id} {d.current_hub.name}")
             
-            # Definir próximo hub
-            d.next_hub = d.path[d.connec_idx].destiny
+            d.next_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
             
-            # FASE 1: Processando espera em zona restrita (2 turns)
             if d.wait_turns > 0:
                 d.wait_turns -= 1
                 
@@ -183,7 +169,6 @@ class Map:
                     print(f"{d.id} in transit to restricted zone ({d.wait_turns} turns left)")
                 continue
             
-            # FASE 2: Avançar para zona NORMAL/PRIORITY (1 turn direto)
             if not d.in_connec and d.next_hub.zone != 'restricted':
                 can_use_conn = self.drone_can_advance_connec(d)
                 can_use_hub = self.drone_can_advance_hub(d)

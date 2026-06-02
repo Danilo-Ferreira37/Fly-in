@@ -201,3 +201,13 @@ class Map:
            if d.connec_idx >= len(d.path):
                 d.delivered = True
                 continue
+    def get_path_connection(self, hub_path):
+        connec_path = []
+        for i in range(len(hub_path)):
+            for c in self.connections:
+                try:
+                    if c.origin is hub_path[i] and c.destiny is hub_path[i + 1]:
+                        connec_path.append(c)
+                except IndexError:
+                    pass
+        return connec_path
