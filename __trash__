@@ -192,3 +192,12 @@ class Map:
 
 
 ////
+
+
+
+
+
+
+           if d.connec_idx >= len(d.path):
+                d.delivered = True
+                continue

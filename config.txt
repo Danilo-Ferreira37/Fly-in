@@ -6,15 +6,15 @@ end_hub: goal 10 10 [color=yellow]
 
 hub: A 3 4 [zone=restricted color=red max_drones=1]
 hub: B 6 2 [zone=restricted color=blue max_drones=2]
-hub: C 6 3 [zone=restricted color=red]
-hub: D 0 9 [zone=restricted color=red]
-hub: E 3 2 [zone=restricted color=red]
+hub: C 6 3 [zone=restricted  color=red]
+hub: D 0 9 [ zone=restricted color=red]
+hub: E 3 2 [ color=red]
 #hub: F 3 3 [color=blue]
 
 connection: start-A [max_link_capacity=1]
 connection: start-B 
 connection: B-D 
-connection: A-C [max_link_capacity=3]
+connection: A-C [max_link_capacity=1]
 connection: C-E
 connection: D-E
 connection: E-goal

@@ -32,7 +32,6 @@ class Hub:
         if start or end:
             self.max_drones = float("inf")
         self.next = []
-        self.prev = []
 
     def can_drone_receive(self) -> bool:
         return self.qnty_drones < self.max_drones
@@ -51,11 +50,24 @@ class Connection:
         self.destiny = to_hub
 
         from_hub.next.append(to_hub)
-        to_hub.prev.append(from_hub)
+        to_hub.next.append(from_hub)
 
         self.max_l_c = int(metadata.get("max_link_capacity", 1))
         self.current_drones = 0
 
+    def get_next_hub(self, current):
+        if current != self.zone1 and current != self.zone2:
+            return False
+        if current == self.zone1:
+            return self.zone2
+        return self.zone1
+
+    def get_current_hub(self, current):
+        if current != self.zone1 and current != self.zone2:
+            return False
+        if current == self.zone1:
+            return self.zone1
+        return self.zone2
+
     def __repr__(self):
         return f"Conn {self.origin.name} -> {self.destiny.name}, {self.max_l_c})"
-
