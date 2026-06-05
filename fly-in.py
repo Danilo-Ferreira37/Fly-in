@@ -11,9 +11,9 @@ def main():
     info = config.load_file()
     info: dict
 
-    map = Map(info)
-    vizu = Visualizer(map, 1300, 500)
-    vizu.run()
+    map = Map(info, Visualizer)
+    #vizu = Visualizer(map, 1300, 500)
+    #vizu.run()
 
 if __name__ == "__main__":
     main()

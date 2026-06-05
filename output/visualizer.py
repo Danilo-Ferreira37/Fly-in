@@ -9,8 +9,7 @@ class Visualizer:
         s.midle_x= width // 2
         s.midle_y = height // 2
         s.map_obj = map_obj
-        s.min_x = [min(h.coord[0] for h in s.map_obj.hubs)]
-        s.min_y = [min(h.coord[1] for h in s.map_obj.hubs)]
+
         
         s.drone_image = pygame.image.load("output/ovni_drone.png")
         s.drone_image = pygame.transform.scale(s.drone_image, (30, 30))

@@ -1,7 +1,8 @@
 from fly_struct import Drone, Hub, Connection
 from parser import TypeZone
 import heapq
-import sys
+import time
+
 
 YELLOW = "\033[33m"
 GREEN = "\033[32m"
@@ -10,7 +11,8 @@ RESET = "\033[0m"
 
 turn = 0
 class Map:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, class_visualizer):
+        
         self.start_hub = Hub(config["start_hub"]["name"],
                              config["start_hub"]["X/Y"],
                              config["start_hub"]["metadata"], start=True)
@@ -43,10 +45,12 @@ class Map:
         self.all_paths = self.get_all_paths()
         self.drones = [Drone(f"D{d + 1}", self.all_paths[d % len(self.all_paths)], self.start_hub) for d in range(config["nb_drones"])]
         #self.drones = [Drone(f"D{d + 1}", self.default_path, self.start_hub) for d in range(config["nb_drones"])]
-        
+        vizu = class_visualizer(self, 1300, 500)
 
         while any(not d.delivered for d in self.drones):
+            vizu.run()
             self.simulate_turn()
+
         print("ALL DRONES DELIVERED!!")
 
 
