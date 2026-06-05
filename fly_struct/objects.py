@@ -25,7 +25,6 @@ class Hub:
             self.cost = 0.9
         self.max_drones = metadata.get("max_drones", 1)
 
-        self.reserved_drones = []
         self.qnty_drones = 0
         self.start = (start)
         self.end = (end)

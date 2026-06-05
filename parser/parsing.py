@@ -69,6 +69,8 @@ class ConfigParser:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
             key, value = (info.strip() for info in d.split("=", 1))
+            if not value:
+                raise ParsingError("The metadata value cannot be void")
             if key in metadata:
                 raise ParsingError("The metadata cannot has a repeated key!")
             if conx and key != MetaData.MAX_LINK_CAPACITY.value:

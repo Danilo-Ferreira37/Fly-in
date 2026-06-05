@@ -11,9 +11,18 @@ class Visualizer:
         s.map_obj = map_obj
 
         
+        s.scale = 150
+        s.radius = 60
+
         s.drone_image = pygame.image.load("output/ovni_drone.png")
-        s.drone_image = pygame.transform.scale(s.drone_image, (30, 30))
+        s.drone_image = pygame.transform.scale(s.drone_image, (50, 50))
+        
+        s.background = pygame.image.load("output/vermelhinho.jpg")
+        s.background = pygame.transform.scale(s.background, (width, height))
+        
         s.running = True
+        s.next_turn = False
+        s.prev_turn = False
         s.screen = pygame.display.set_mode((width, height))
         s.clock = pygame.time.Clock()
         s.font = pygame.font.Font(None, 24)
@@ -21,17 +30,16 @@ class Visualizer:
         pygame.display.set_caption("Fly-in do DANILO!!")
 
     def draw(s):
-
-        s.screen.fill((0, 0, 0))
+        s.screen.blit(s.background, (0, 0))
         s.draw_connec()
         s.draw_hubs()
         s.draw_drones()
         s.draw_info()
 
         pygame.display.flip()
+
     def draw_connec(s):
-        scale = 100
-        offset_x = s.midle_x // 4
+        offset_x = s.midle_x // 8
         offset_y = s.midle_y
         
         for connec in s.map_obj.connections:
@@ -39,45 +47,54 @@ class Visualizer:
             x2, y2 = connec.zone2.coord
             
             # Escalar e deslocar (SEM incrementar)
-            x1 = x1 * scale + offset_x
-            y1 = y1 * scale + offset_y
-            x2 = x2 * scale + offset_x
-            y2 = y2 * scale + offset_y
+            x1 = x1 * s.scale + offset_x
+            y1 = y1 * s.scale + offset_y
+            x2 = x2 * s.scale + offset_x
+            y2 = y2 * s.scale + offset_y
             
             color = (50, 205, 50)
             pygame.draw.line(s.screen, color, (x1, y1), (x2, y2), width=5)
 
     def draw_hubs(s):
-        scale = 100
-        offset_x = s.midle_x // 4
+        offset_x = s.midle_x // 8
         offset_y = s.midle_y
 
         for h in s.map_obj.hubs:
             x, y = h.coord
             color = s.parse_color(h.color)
-            radius = 30
             
             # Escalar e deslocar (SEM incrementar)
-            x = x * scale + offset_x
-            y = y * scale + offset_y
+            x = x * s.scale + offset_x
+            y = y * s.scale + offset_y
             
-            pygame.draw.circle(s.screen, color, (x, y), radius)
-            pygame.draw.circle(s.screen, (255, 255, 255), (x, y), radius, width=2)
+            pygame.draw.circle(s.screen, color, (x, y), s.radius)
+            pygame.draw.circle(s.screen, (255, 255, 255), (x, y), s.radius, width=2)
             
             text = s.font.render(h.name, True, (255, 255, 255))
             text_rect = text.get_rect(center=(x, y))
             s.screen.blit(text, text_rect)
 
     def draw_drones(s):
-        scale = 100
-        offset_x = s.midle_x // 4
+        offset_x = s.midle_x // 8
         offset_y = s.midle_y
 
+        i = 0
+        j = 2
         for d in s.map_obj.drones:
-            x, y = d.current_hub.coord
+            if d.in_connec:
+                hub1 = d.path[d.connec_idx].zone1
+                hub2 = d.path[d.connec_idx].zone2
+                
+                x = (hub1.coord[0] + hub2.coord[0]) / 2
+                y = (hub1.coord[1] + hub2.coord[1]) / 2
 
-            x, y = x * scale + offset_x, y * scale + offset_y
+            else:
+                x, y = d.current_hub.coord
+            x, y = x * s.scale + offset_x, y * s.scale + offset_y
+
             s.screen.blit(s.drone_image, s.drone_image.get_rect(center=(x, y)))
+            i += 2
+            j += 4
 
     def draw_info(s):
         pass
@@ -86,14 +103,17 @@ class Visualizer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 s.running = False
+                pygame.quit()
+                sys.exit(0)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RIGHT:
+                    s.next_turn = True
+                elif event.key == pygame.K_LEFT:
+                    s.prev_turn = True
 
     def run(s):
-        while s.running:
-            s.handle_events()
-            s.draw()
-            s.clock.tick(30)
-        pygame.quit()
-        sys.exit()
+        s.handle_events()
+        s.draw()
 
     def parse_color(self, color_name):
         #RGB
@@ -120,3 +140,4 @@ class Visualizer:
             "rainbow": (255, 100, 255)
         }
         return color_dict.get(color_name, (255, 255, 255))
+
