@@ -92,7 +92,7 @@ class Visualizer:
                 x, y = d.current_hub.coord
             x, y = x * s.scale + offset_x, y * s.scale + offset_y
 
-            s.screen.blit(s.drone_image, s.drone_image.get_rect(center=(x, y)))
+            s.screen.blit(s.drone_image, s.drone_image.get_rect(center=(x + i, y+ j)))
             i += 2
             j += 4
 
