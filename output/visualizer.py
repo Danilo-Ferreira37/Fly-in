@@ -7,8 +7,13 @@ class Visualizer:
     def __init__(s, map_obj: Map, width: int, height: int):
         pygame.init()
         s.midle_x= width // 2
-        s.midle_y = width // 2
+        s.midle_y = height // 2
         s.map_obj = map_obj
+        s.min_x = [min(h.coord[0] for h in s.map_obj.hubs)]
+        s.min_y = [min(h.coord[1] for h in s.map_obj.hubs)]
+        
+        s.drone_image = pygame.image.load("output/ovni_drone.png")
+        s.drone_image = pygame.transform.scale(s.drone_image, (30, 30))
         s.running = True
         s.screen = pygame.display.set_mode((width, height))
         s.clock = pygame.time.Clock()
@@ -25,46 +30,55 @@ class Visualizer:
         s.draw_info()
 
         pygame.display.flip()
-
     def draw_connec(s):
-        scale = 1
-        offset_x = 150   # ← Deslocamento X   # ← Deslocamento Y
-        offset_y = 550
+        scale = 100
+        offset_x = s.midle_x // 4
+        offset_y = s.midle_y
+        
         for connec in s.map_obj.connections:
             x1, y1 = connec.zone1.coord
             x2, y2 = connec.zone2.coord
             
-  
-            x1 +=  offset_x
-            y1 += offset_y
-            offset_x += 150   # ← Deslocamento X   # ← Deslocamento Y
-            offset_y += 500
-            x2 += offset_x
-            y2 +=  offset_y
-            print(f"Zona1 {x1},{y1}")
-            print(f"Zona2 {x2},{y2}")
-            color = (255, 192, 203)
-            pygame.draw.line(s.screen, color, (x1, y1), (x2, y2), width=2)
+            # Escalar e deslocar (SEM incrementar)
+            x1 = x1 * scale + offset_x
+            y1 = y1 * scale + offset_y
+            x2 = x2 * scale + offset_x
+            y2 = y2 * scale + offset_y
+            
+            color = (50, 205, 50)
+            pygame.draw.line(s.screen, color, (x1, y1), (x2, y2), width=5)
 
     def draw_hubs(s):
-        scale = 1
-        offset_x = 100
-        offset_y = 550
+        scale = 100
+        offset_x = s.midle_x // 4
+        offset_y = s.midle_y
+
         for h in s.map_obj.hubs:
             x, y = h.coord
-            color = (s.parse_color(h.color))
-            radius = 15
-            x, y = x + offset_x, y + offset_y
+            color = s.parse_color(h.color)
+            radius = 30
+            
+            # Escalar e deslocar (SEM incrementar)
+            x = x * scale + offset_x
+            y = y * scale + offset_y
+            
             pygame.draw.circle(s.screen, color, (x, y), radius)
             pygame.draw.circle(s.screen, (255, 255, 255), (x, y), radius, width=2)
-            offset_x += 100
+            
             text = s.font.render(h.name, True, (255, 255, 255))
-            text_rect = text.get_rect(center=(x,y))
+            text_rect = text.get_rect(center=(x, y))
             s.screen.blit(text, text_rect)
 
-
     def draw_drones(s):
-        pass
+        scale = 100
+        offset_x = s.midle_x // 4
+        offset_y = s.midle_y
+
+        for d in s.map_obj.drones:
+            x, y = d.current_hub.coord
+
+            x, y = x * scale + offset_x, y * scale + offset_y
+            s.screen.blit(s.drone_image, s.drone_image.get_rect(center=(x, y)))
 
     def draw_info(s):
         pass
@@ -83,6 +97,7 @@ class Visualizer:
         sys.exit()
 
     def parse_color(self, color_name):
+        #RGB
         color_dict = {
             "red": (255, 0, 0),
             "green": (0, 255, 0),

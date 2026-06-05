@@ -12,7 +12,7 @@ def main():
     info: dict
 
     map = Map(info)
-    vizu = Visualizer(map, 3200, 1200)
+    vizu = Visualizer(map, 1300, 500)
     vizu.run()
 
 if __name__ == "__main__":
