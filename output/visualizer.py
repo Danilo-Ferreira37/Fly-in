@@ -17,7 +17,7 @@ class Visualizer:
         s.drone_image = pygame.image.load("output/ovni_drone.png")
         s.drone_image = pygame.transform.scale(s.drone_image, (50, 50))
         
-        s.background = pygame.image.load("output/vermelhinho.jpg")
+        s.background = pygame.image.load("output/space.jpg")
         s.background = pygame.transform.scale(s.background, (width, height))
         
         s.running = True

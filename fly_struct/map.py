@@ -43,7 +43,6 @@ class Map:
         
         self.all_paths = self.get_all_paths()
         self.drones = [Drone(f"D{d + 1}", self.all_paths[d % len(self.all_paths)], self.start_hub) for d in range(config["nb_drones"])]
-        #self.drones = [Drone(f"D{d + 1}", self.default_path, self.start_hub) for d in range(config["nb_drones"])]
         self.run_simulation()
 
     def run_simulation(self):
@@ -55,7 +54,6 @@ class Map:
                 self.vizu.next_turn = False
 
         print("ALL DRONES DELIVERED!!")
-        #self.vizu.quit()
 
     def get_all_paths(self):
         all_paths = [self.default_path]
@@ -139,55 +137,6 @@ class Map:
 
         return next_hub.can_drone_receive() 
 
-
-    def simulate_turnoo(self):
-            global turn
-            turn += 1
-            print(f"\nCurrent turn {turn}\n")
-            
-            for d in self.drones: 
-                if d.current_hub == self.end_hub:
-                    d.delivered = True
-                    print(f"drone: {d.id} delivered")
-                    print()
-                    continue
-                print(f"{d.id} {d.current_hub.name}")
-                d.next_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
-
-                if d.wait_turns > 0:
-                    d.wait_turns -= 1
-
-                    d.path[d.connec_idx].current_drones -= 1
-                    d.current_hub = d.next_hub
-                    d.current_hub.qnty_drones += 1
-                    d.connec_idx += 1
-                    
-                    d.in_connec = False
-                    d.already_wait = False
-                    print(f"{d.id} arrived at {d.current_hub.name} (restricted)")
-                    continue
-
-                if self.drone_can_advance_connec(d):
-                    d.current_hub.qnty_drones -= 1
-                    d.in_connec = True
-                    d.path[d.connec_idx].current_drones += 1
-                    if d.next_hub.zone == TypeZone.RESTRICTED.value and self.drone_can_advance_hub(d) and not d.already_wait:
-                        d.wait_turns = 1
-                        d.already_wait = True
-                        continue
-                    
-                    elif self.drone_can_advance_hub(d):
-                        d.in_connec = False
-                        d.path[d.connec_idx].current_drones -= 1
-                        d.current_hub.qnty_drones -= 1
-                        d.current_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
-                        d.current_hub.qnty_drones += 1
-                        d.connec_idx += 1
-                    
-
-
-
-
     def simulate_turn(self):
         global turn
         turn += 1
@@ -203,7 +152,6 @@ class Map:
             print(f"{d.id} {d.current_hub.name}")
             d.next_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
 
-            # FASE 1: Saindo de trânsito (esperou turns)
             if d.wait_turns > 0:
                 d.wait_turns -= 1
                 d.path[d.connec_idx].current_drones -= 1
@@ -216,12 +164,11 @@ class Map:
                 print(f"{d.id} arrived at {d.current_hub.name} (restricted)")
                 continue
 
-            # FASE 2: Em trânsito MAS hub está cheio (voltar)
+
             if d.in_connec and not self.drone_can_advance_hub(d):
                 print(f"{YELLOW}{d.id} in transit (hub full, waiting){RESET}")
                 continue
             
-            # FASE 3: Em trânsito E hub liberou (sair)
             if d.in_connec and self.drone_can_advance_hub(d):
                 d.path[d.connec_idx].current_drones -= 1
                 d.current_hub = d.next_hub
@@ -233,28 +180,25 @@ class Map:
                 print(f"{GREEN}{d.id} exited connection to {d.current_hub.name}{RESET}")
                 continue
 
-            # FASE 4: Tentando entrar na conexão
+
             if not d.in_connec and self.drone_can_advance_connec(d):
                 d.current_hub.qnty_drones -= 1
                 d.in_connec = True
                 d.path[d.connec_idx].current_drones += 1
-                
-                # ZONA RESTRITA: esperar 2 turns
+    
                 if d.next_hub.zone == TypeZone.RESTRICTED.value and self.drone_can_advance_hub(d) and not d.already_wait:
                     d.wait_turns = 1
                     d.already_wait = True
                     print(f"{RED}{d.id} entering restricted zone {d.next_hub.name} (2 turn transit){RESET}")
                 
-                # ZONA NORMAL: pode sair já?
                 elif self.drone_can_advance_hub(d):
                     d.in_connec = False
                     d.path[d.connec_idx].current_drones -= 1
-                    d.current_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
+                    d.current_hub = d.next_hub
                     d.current_hub.qnty_drones += 1
                     d.connec_idx += 1
                     print(f"{GREEN}{d.id} advanced to {d.current_hub.name}{RESET}")
                 
-                # Hub cheio: ficar em trânsito
                 else:
                     print(f"{YELLOW}{d.id} in transit (hub full){RESET}")
             

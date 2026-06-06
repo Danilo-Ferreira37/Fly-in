@@ -28,8 +28,11 @@ class MetaData(Enum):
         return value in (item.value for item in cls)
 
     @staticmethod
-    def valid_color(color):
-        return color in ["blue", "green",'crimson', 'yellow', 'red', 'cyan', 'white','black', 'rainbow','violet', 'maroon','darkred', 'purple', 'orange', 'gray', 'pink', 'magenta', 'lime', 'gold', 'brown']
+    def valid_color(color, return_colors=False):
+        valid_color = {"blue", "green",'crimson', 'yellow', 'red', 'cyan', 'white','black', 'rainbow','violet', 'maroon','darkred', 'purple', 'orange', 'gray', 'pink', 'magenta', 'lime', 'gold', 'brown'}
+        if return_colors:
+            return valid_color
+        return color in valid_color
 
 
 class ConfigParser:
@@ -60,8 +63,10 @@ class ConfigParser:
         if "[" in content or content[-1] != "]":
             raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
         rest = line.replace(match.group(0), "").strip()
-        div_data = content.replace("]", "", 1).split()
-
+        content = content.replace("]", "", 1)
+        normalized = re.sub(r"\s*=\s*", "=", content)
+        div_data = normalized.split()
+        
         val_keys = ", ".join(item.value for item in MetaData if item != MetaData.MAX_LINK_CAPACITY)
         val_zone = ", ".join(item.value for item in TypeZone)
         metadata = {}
@@ -69,8 +74,6 @@ class ConfigParser:
             if "=" not in d:
                 raise ParsingError("The metadata is invalid, must be for example: '[color=Red]'")
             key, value = (info.strip() for info in d.split("=", 1))
-            if not value:
-                raise ParsingError("The metadata value cannot be void")
             if key in metadata:
                 raise ParsingError("The metadata cannot has a repeated key!")
             if conx and key != MetaData.MAX_LINK_CAPACITY.value:
@@ -80,7 +83,7 @@ class ConfigParser:
 
             if key == MetaData.COLOR.value:
                 if not MetaData.valid_color(value):
-                    raise ParsingError("Enter a valid color")
+                    raise ParsingError(f"Enter a valid color between: {MetaData.valid_color(None, True)}")
             elif key == MetaData.ZONE.value:
                 if not TypeZone.has_value(value):
                     raise ParsingError(f"Enter a valid type zone: {val_zone}")
@@ -93,7 +96,8 @@ class ConfigParser:
             elif key == MetaData.MAX_LINK_CAPACITY.value:
                 if not conx:
                     raise ParsingError("The metadata 'max_link_capacity' only can be in connections!")
-
+                if not int(value) > 0:
+                    raise ParsingError("The max_link_capacitie data must to be a positive integer")
             metadata[key] = value
 
         return rest, metadata
@@ -228,7 +232,7 @@ class ConfigParser:
             print(f"For executes the program enter: chmod +rx {self.file}")
             exit(1)
         except FileNotFoundError:
-            print("Configuration file not found.")
+            print("Error: Configuration file not found.")
             exit(1)
         except ValueError as e:
             print(f"Error: {e}")

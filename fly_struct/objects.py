@@ -20,15 +20,18 @@ class Hub:
         self.metadata = metadata
         self.color = metadata.get("color")
         self.zone = metadata.get("zone", "normal")
-        self.cost = 1 if self.zone in ("normal") else 2
-        if self.zone in ("priority"):
+        self.cost = 1 if self.zone == "normal" else 2
+        if self.zone == "priority":
             self.cost = 0.9
         self.max_drones = metadata.get("max_drones", 1)
 
         self.qnty_drones = 0
-        self.start = (start)
-        self.end = (end)
+        self.start = start
+        self.end = end
         if start or end:
+            if self.zone == "blocked":
+                print("Error: The start_hub and end_hub cannot be blockeds")
+                exit(1)
             self.max_drones = float("inf")
         self.next = []
 
