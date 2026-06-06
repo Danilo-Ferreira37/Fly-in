@@ -18,7 +18,7 @@ class Hub:
         self.name = name
         self.coord = coord
         self.metadata = metadata
-        self.color = metadata.get("color")
+        self.color = metadata.get("color", )
         self.zone = metadata.get("zone", "normal")
         self.cost = 1 if self.zone == "normal" else 2
         if self.zone == "priority":

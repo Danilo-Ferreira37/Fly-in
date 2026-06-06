@@ -91,5 +91,4 @@ def main():
     map = Map(info, Visualizer)
 
 if __name__ == "__main__":
-    #print(int("  "))
     main()
