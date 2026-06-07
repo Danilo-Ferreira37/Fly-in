@@ -11,8 +11,8 @@ RESET = "\033[0m"
 
 turn = 0
 class Map:
-    def __init__(self, config: dict, class_visualizer):
-        self.vizu = class_visualizer(self, 1900, 1000)
+    def __init__(self, config: dict, class_visualizer, change_color: bool = False):
+        self.vizu = class_visualizer(self, 1900, 1000, change_color)
 
         self.start_hub = Hub(config["start_hub"]["name"],
                              config["start_hub"]["X/Y"],
@@ -43,7 +43,11 @@ class Map:
         
         self.all_paths = self.get_all_paths()
         self.drones = [Drone(f"D{d + 1}", self.all_paths[d % len(self.all_paths)], self.start_hub) for d in range(config["nb_drones"])]
-        self.run_simulation()
+        try:
+            self.run_simulation()
+        except FileNotFoundError:
+            print("Error: Image to the vizualization not fount!")
+            exit(1)
 
     def run_simulation(self):
         while any(not d.delivered for d in self.drones):
@@ -159,7 +163,6 @@ class Map:
 
 
             if d.in_connec and not self.drone_can_advance_hub(d):
-                print(f"{d.id}-connection")
                 continue
             
             if d.in_connec and self.drone_can_advance_hub(d):
@@ -182,7 +185,7 @@ class Map:
                 if d.next_hub.zone == TypeZone.RESTRICTED.value and self.drone_can_advance_hub(d) and not d.already_wait:
                     d.wait_turns = 1
                     d.already_wait = True
-                    print(f"{d.id}-connection", end=" ")
+                    print(f"{d.id}-{d.next_hub}", end=" ")
                 
                 elif self.drone_can_advance_hub(d):
                     d.in_connec = False
@@ -191,9 +194,4 @@ class Map:
                     d.current_hub.qnty_drones += 1
                     d.connec_idx += 1
                     print(f"{d.id}-{d.current_hub.name}", end=" ")
-                
-                else:
-                    print(f"{d.id}-connection", end=" ")
-            else:
-                print(f"{d.id}-{d.current_hub.name}", end=" ")
         print()
