@@ -13,9 +13,9 @@ class Visualizer:
         s.zoom = 1.0
         s.scale = 150
         s.radius = 60
-        if theme == "Flying on the Sky":
+        if theme == "Flying in the Sky":
             s.img_bckg_drone = ("output/nuvens.png", "output/drone.png")
-            s.connec_color = (s.parse_color("black"))
+            s.connec_color = (s.parse_color("gray"))
             s.text_color = s.parse_color("black")
         else:
             s.img_bckg_drone = ("output/space.png", "output/ovni.png")
@@ -26,6 +26,7 @@ class Visualizer:
         s.background = pygame.transform.scale(s.background, (width, height))
 
         s.running = True
+        s.auto_mode = False
         s.next_turn = False
         s.prev_turn = False
         s.screen = pygame.display.set_mode((width, height))
@@ -44,6 +45,9 @@ class Visualizer:
                     s.next_turn = True
                 elif event.key == pygame.K_LEFT:
                     s.prev_turn = True
+                elif event.key == pygame.K_SPACE:
+                    s.auto_mode = not s.auto_mode
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4:# Scroll UP
                     s.zoom *= 1.1

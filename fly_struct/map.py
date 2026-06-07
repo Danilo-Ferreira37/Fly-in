@@ -53,6 +53,7 @@ class Map:
         while any(not d.delivered for d in self.drones):
             self.vizu.run()
 
+  
             if self.vizu.next_turn:
                 self.simulate_turn()
                 self.vizu.next_turn = False
@@ -185,7 +186,7 @@ class Map:
                 if d.next_hub.zone == TypeZone.RESTRICTED.value and self.drone_can_advance_hub(d) and not d.already_wait:
                     d.wait_turns = 1
                     d.already_wait = True
-                    print(f"{d.id}-{d.next_hub}", end=" ")
+                    print(f"{d.id}-{d.next_hub.name}", end=" ")
                 
                 elif self.drone_can_advance_hub(d):
                     d.in_connec = False

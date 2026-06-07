@@ -88,10 +88,10 @@ def choose_map() -> str | bool:
         
         elif option == "6":
             os.system("clear")
-            if theme == "Flying on the Sky":
+            if theme == "Flying in the Sky":
                 theme = "Space Travel"
                 continue
-            theme = "Flying on the Sky"
+            theme = "Flying in the Sky"
 
         elif option == "7":
             os.system("clear")
