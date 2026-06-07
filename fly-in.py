@@ -37,6 +37,8 @@ def choose_map() -> str:
                 os.system("clear")
                 print("To the easy maps choose a number from 1 to 3.")
                 continue
+            os.system("clear")
+            print(f"Map: {maps["easy"].get(mp.replace("0", "")).replace(".txt", "").replace("_", " ")}")
             return f'maps/easy/{maps["easy"].get(mp.replace("0", ""))}'
 
         elif option == "2":
@@ -49,6 +51,8 @@ def choose_map() -> str:
                 os.system("clear")
                 print("To the medium maps choose a number from 1 to 3.")
                 continue
+            os.system("clear")
+            print(f"Map: {maps["medium"].get(mp.replace("0", "")).replace(".txt", "").replace("_", " ")}")
             return f'maps/medium/{maps["medium"].get(mp.replace("0", ""))}'
 
         elif option == "3":
@@ -61,8 +65,12 @@ def choose_map() -> str:
                 os.system("clear")
                 print("To the hard maps choose a number from 1 to 3.")
                 continue
+            os.system("clear")
+            print(f"Map: {maps["hard"].get(mp.replace("0", "")).replace(".txt", "").replace("_", " ")}")
             return f'maps/hard/{maps["hard"].get(mp.replace("0", ""))}'
         elif option == "4":
+            os.system("clear")
+            print("Map: The_impossible_dream".replace("_", " "))
             return "maps/challenger/01_the_impossible_dream.txt"
         elif option == "5":
             os.system("clear")
@@ -70,6 +78,8 @@ def choose_map() -> str:
             if mp == 'q':
                 os.system("clear")
                 continue
+            os.system("clear")
+            print("Custom Map")
             return mp
         
         elif option == "6":

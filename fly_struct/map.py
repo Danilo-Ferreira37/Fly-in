@@ -53,8 +53,6 @@ class Map:
                 self.simulate_turn()
                 self.vizu.next_turn = False
 
-        print("ALL DRONES DELIVERED!!")
-
     def get_all_paths(self):
         all_paths = [self.default_path]
         for h in self.hubs[2:]:
@@ -140,16 +138,11 @@ class Map:
     def simulate_turn(self):
         global turn
         turn += 1
-        print(f"\nCurrent turn {turn}\n")
-        
         for d in self.drones: 
             if d.current_hub == self.end_hub:
                 d.delivered = True
-                print(f"drone: {d.id} delivered")
-                print()
                 continue
-            
-            print(f"{d.id} {d.current_hub.name}")
+
             d.next_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
 
             if d.wait_turns > 0:
@@ -161,12 +154,12 @@ class Map:
                 
                 d.in_connec = False
                 d.already_wait = False
-                print(f"{d.id} arrived at {d.current_hub.name} (restricted)")
+                print(f"{d.id}-{d.current_hub.name}", end=" ")
                 continue
 
 
             if d.in_connec and not self.drone_can_advance_hub(d):
-                print(f"{YELLOW}{d.id} in transit (hub full, waiting){RESET}")
+                print(f"{d.id}-connection")
                 continue
             
             if d.in_connec and self.drone_can_advance_hub(d):
@@ -177,7 +170,7 @@ class Map:
                 
                 d.in_connec = False
                 d.already_wait = False
-                print(f"{GREEN}{d.id} exited connection to {d.current_hub.name}{RESET}")
+                print(f"{d.id}-{d.current_hub.name}", end=" ")
                 continue
 
 
@@ -189,7 +182,7 @@ class Map:
                 if d.next_hub.zone == TypeZone.RESTRICTED.value and self.drone_can_advance_hub(d) and not d.already_wait:
                     d.wait_turns = 1
                     d.already_wait = True
-                    print(f"{RED}{d.id} entering restricted zone {d.next_hub.name} (2 turn transit){RESET}")
+                    print(f"{d.id}-connection", end=" ")
                 
                 elif self.drone_can_advance_hub(d):
                     d.in_connec = False
@@ -197,11 +190,10 @@ class Map:
                     d.current_hub = d.next_hub
                     d.current_hub.qnty_drones += 1
                     d.connec_idx += 1
-                    print(f"{GREEN}{d.id} advanced to {d.current_hub.name}{RESET}")
+                    print(f"{d.id}-{d.current_hub.name}", end=" ")
                 
                 else:
-                    print(f"{YELLOW}{d.id} in transit (hub full){RESET}")
-            
-            # Não conseguiu entrar na conexão
+                    print(f"{d.id}-connection", end=" ")
             else:
-                print(f"{YELLOW}{d.id} waiting (connection full){RESET}")
+                print(f"{d.id}-{d.current_hub.name}", end=" ")
+        print()

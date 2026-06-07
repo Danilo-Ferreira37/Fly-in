@@ -45,8 +45,7 @@ class Visualizer:
         for connec in s.map_obj.connections:
             x1, y1 = connec.zone1.coord
             x2, y2 = connec.zone2.coord
-            
-            # Escalar e deslocar (SEM incrementar)
+
             x1 = x1 * s.scale + offset_x
             y1 = y1 * s.scale + offset_y
             x2 = x2 * s.scale + offset_x
