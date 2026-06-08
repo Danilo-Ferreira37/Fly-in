@@ -84,7 +84,7 @@ def choose_map() -> str | bool:
                 continue
             os.system("clear")
             print("Custom Map")
-            return mp
+            return mp, theme
         
         elif option == "6":
             os.system("clear")
@@ -106,6 +106,7 @@ def main():
                 "executes with a config file or alone!")
             exit(1)
         config = ConfigParser(sys.argv[1])
+        theme = "Space Travel"
     else:
         mp, theme = choose_map()
         config = ConfigParser(mp)
