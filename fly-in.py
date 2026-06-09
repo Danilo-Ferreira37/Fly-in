@@ -2,10 +2,11 @@ from parser.parsing import ConfigParser
 from output.visualizer import Visualizer
 from fly_struct.map import Map
 import os
+from typing import Tuple
 import sys
 
 
-def choose_map() -> str | str:
+def choose_map() -> Tuple[str , str]:
     maps = {
         "easy": {
             "1": "01_linear_path.txt",

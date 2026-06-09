@@ -68,6 +68,8 @@ class Visualizer:
         offset_y = s.midle_y
 
         for connec in s.map_obj.connections:
+            if connec.zone1 is None or connec.zone2 is None:
+                continue
             x1, y1 = connec.zone1.coord
             x2, y2 = connec.zone2.coord
 
@@ -148,7 +150,7 @@ class Visualizer:
         s.handle_events()
         s.draw()
 
-    def parse_color(self, color_name: str) -> tuple[int]:
+    def parse_color(self, color_name: str) -> tuple[int, int, int]:
         color_dict = {
             "red": (255, 0, 0),
             "green": (0, 255, 0),

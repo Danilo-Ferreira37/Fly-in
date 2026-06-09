@@ -1,6 +1,6 @@
 from enum import Enum
 import re
-
+from typing import Any, Dict, List, Set,Optional, Union
 
 class ParsingError(Exception):
     pass
@@ -66,11 +66,11 @@ class ConfigParser:
             "hub",
             "connection",
         }
-        self.parse_key: set[str] = set()
-        self.config = {}
-        self.connec_names = []
-        self.hub_names = set()
-        self.hub_coordinades = set()
+        self.parse_key: Set[str] = set()
+        self.config: Dict[str, Any] = {}
+        self.connec_names: List[tuple[str, str]] = []
+        self.hub_names: Set[str] = set()
+        self.hub_coordinades: Set[tuple[int, int]] = set()
 
     @staticmethod
     def clean_line(line: str) -> str | None:
@@ -83,8 +83,8 @@ class ConfigParser:
 
     @staticmethod
     def split_metadata(
-        line: str, conx: bool = False
-    ) -> tuple[str | dict[str, str]]:
+    line: str, conx: bool = False
+) -> tuple[str, dict[str, str]]:
         match = re.search(r"\[(.*)$", line)
         if not match:
             return line.strip(), {}
@@ -133,10 +133,9 @@ class ConfigParser:
                 if not TypeZone.has_value(value):
                     raise ParsingError(f"Enter a valid type zone: {val_zone}")
             elif key == MetaData.MAX_DRONES.value:
-                val = int(value)
-                if not val > 0:
+                if not int(value) > 0:
                     raise ValueError
-                metadata[key] = val
+                metadata[key] = value
                 continue
             elif key == MetaData.MAX_LINK_CAPACITY.value:
                 if not conx:
@@ -153,12 +152,12 @@ class ConfigParser:
 
         return rest, metadata
 
-    def parse_line(self, line: str) -> None | dict:
+    def parse_line(self, line: str) -> Optional[Union[int, Dict[str, Any]]]:
         try:
-            hub = False
+            is_hub = False
             if line.startswith("nb_drones"):
-                key, value = line.split(":", 1)
-                value = int(value)
+                key, raw_value = line.split(":", 1)
+                value = int(raw_value)
                 if value <= 0:
                     raise ValueError
                 return value
@@ -169,57 +168,54 @@ class ConfigParser:
                 or line.startswith("hub")
             ):
                 if line.startswith("hub"):
-                    hub = True
-                key, line = line.split(":", 1)
-                line, metadata = self.split_metadata(line.strip())
-                line = line.split()
-                if len(line) != 3 or key.strip() not in (
+                    is_hub = True
+
+                key, raw_rest = line.split(":", 1)
+                rest, metadata = self.split_metadata(raw_rest.strip())
+                parts = rest.split()
+
+                if len(parts) != 3 or key.strip() not in (
                     "start_hub",
                     "end_hub",
                     "hub",
                 ):
                     raise ParsingError(
-                        "The hub must follow the format of the example below\n"
-                        "'hub: roof1 3 4 [zone=restricted color=red]'!"
+                        "The hub must follow the format:\n"
+                        "'hub: roof1 3 4 [zone=restricted color=red]'"
                     )
 
-                if "-" in line[0]:
-                    raise ParsingError("The hub name cannot has '-' in name")
-                if line[0] in self.hub_names:
+                name = parts[0]
+                if "-" in name:
+                    raise ParsingError("The hub name cannot contain '-'")
+                if name in self.hub_names:
                     raise ParsingError("Hubs cannot have repeated names.")
-                self.hub_names.add(line[0].strip())
-                cord = (int(line[1]), int(line[2]))
+                self.hub_names.add(name)
+
+                cord = (int(parts[1]), int(parts[2]))
                 if cord in self.hub_coordinades:
-                    raise ParsingError(
-                        "The hub coordinades must be differents!"
-                    )
+                    raise ParsingError("Hub coordinates must be unique!")
                 self.hub_coordinades.add(cord)
-                if hub:
-                    return {
-                        line[0].strip(): {"X/Y": cord, "metadata": metadata}
-                    }
-                return {
-                    "name": line[0].strip(),
-                    "X/Y": cord,
-                    "metadata": metadata,
-                }
+
+                if is_hub:
+                    return {name: {"X/Y": cord, "metadata": metadata}}
+
+                return {"name": name, "X/Y": cord, "metadata": metadata}
 
             elif line.startswith("connection"):
-                data = line.split(":", 1)[1].strip()
-                data, metadata = self.split_metadata(data, True)
-                hub_from, hub_to = (hub.strip() for hub in data.split("-", 1))
+                raw_data = line.split(":", 1)[1].strip()
+                data, metadata = self.split_metadata(raw_data, True)
+                hub_from, hub_to = (h.strip() for h in data.split("-", 1))
+
                 if hub_from == hub_to:
                     raise ParsingError(
-                        "The connection must to be made with differents hubs"
+                        "A connection must link two different hubs."
                     )
 
-                if not {hub_from, hub_to} in self.connec_names:
-                    self.connec_names.append({hub_from, hub_to})
-                    return {
-                        "from": hub_from,
-                        "to": hub_to,
-                        "metadata": metadata,
-                    }
+                pair = (hub_from, hub_to)
+                if pair not in self.connec_names:
+                    self.connec_names.append(pair)
+                    return {"from": hub_from, "to": hub_to, "metadata": metadata}
+
             return None
 
         except ValueError:

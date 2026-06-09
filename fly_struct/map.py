@@ -2,7 +2,7 @@ from fly_struct import Drone, Hub, Connection
 from parser import TypeZone
 import heapq
 import time
-from typing import List
+from typing import List, Optional, Any
 
 YELLOW = "\033[33m"
 GREEN = "\033[32m"
@@ -31,17 +31,18 @@ class Map:
             for key, value in h.items():
                 self.hubs.append(Hub(key, value["X/Y"], value["metadata"]))
 
-        self.vizu = None
+        self.vizu: Optional[Any] = None
         self.connections = []
-        from_h, to_h = None, None
         for c in config["connection"]:
+            from_h: Hub = Hub("Any_hub", (100.0, 21.0), {})
+            to_h: Hub = Hub("Any_hub2", (101.0, 21.0), {})
             for hub in self.hubs:
                 if c["from"] == hub.name:
                     from_h = hub
                 elif c["to"] == hub.name:
                     to_h = hub
-            self.connections.append(Connection(from_h, to_h, c["metadata"]))
 
+            self.connections.append(Connection(from_h, to_h, c["metadata"]))
         try:
             self.default_path, self.cost_def_path = self.dijkstra()
         except KeyError:
@@ -52,9 +53,14 @@ class Map:
             exit(1)
 
         self.all_paths = self.get_all_paths()
+        print(type(self.all_paths))
+        print(type(self.all_paths[0]))
+        print(self.all_paths)
+
         self.drones = [
             Drone(
                 f"D{d + 1}",
+                
                 self.all_paths[d % len(self.all_paths)],
                 self.start_hub,
             )
@@ -62,6 +68,8 @@ class Map:
         ]
 
     def run_simulation(self) -> None:
+        if self.vizu is None:
+            raise RuntimeError("Visualizer not initialized")
         while any(not d.delivered for d in self.drones):
             self.vizu.run()
             if self.vizu.auto_mode:
@@ -72,7 +80,7 @@ class Map:
                 self.simulate_turn()
                 self.vizu.next_turn = False
 
-    def get_all_paths(self) -> List[Connection]:
+    def get_all_paths(self) -> List[List[Connection]]:
         all_paths = [self.default_path]
         for h in self.hubs[2:]:
             try:
@@ -96,7 +104,7 @@ class Map:
                     pass
         return connec_path
 
-    def dijkstra(self, blocked_hub: Hub = None) -> Connection | int:
+    def dijkstra(self, blocked_hub: Hub = None) -> tuple[list[Connection], float]:
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
         min_queue = [(0, 0, self.start_hub, [])]

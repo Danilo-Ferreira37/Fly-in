@@ -1,8 +1,8 @@
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class Drone:
-    def __init__(self, id: str, path: list["Hub"], start_hub: "Hub") -> None:
+    def __init__(self, id: str, path: list["Connection"], start_hub: "Hub") -> None:
         self.id = id
         self.delivered = False
 
@@ -19,7 +19,7 @@ class Hub:
     def __init__(
         self,
         name: str,
-        coord: Tuple[int],
+        coord: Tuple[float, float],
         metadata: dict,
         start: bool = False,
         end: bool = False,
@@ -28,13 +28,13 @@ class Hub:
         self.coord = coord
         self.metadata = metadata
         self.color = metadata.get(
-            "color",
+            "color", "black"
         )
         self.zone = metadata.get("zone", "normal")
-        self.cost = 1 if self.zone == "normal" else 2
+        self.cost: float = 1.0 if self.zone == "normal" else 2.0
         if self.zone == "priority":
             self.cost = 0.9
-        self.max_drones = metadata.get("max_drones", 1)
+        self.max_drones: float = float(metadata.get("max_drones", 1))
 
         self.qnty_drones = 0
         self.start = start
@@ -44,9 +44,10 @@ class Hub:
                 print("Error: The start_hub and end_hub cannot be blockeds")
                 exit(1)
             self.max_drones = float("inf")
-        self.next = []
+        self.next: list[Hub] = []
 
     def can_drone_receive(self) -> bool:
+        print()
         return self.qnty_drones < self.max_drones
 
     def __repr__(self) -> str:
@@ -68,16 +69,16 @@ class Connection:
         self.max_l_c = int(metadata.get("max_link_capacity", 1))
         self.current_drones = 0
 
-    def get_next_hub(self, current) -> Hub:
+    def get_next_hub(self, current) -> Optional[Hub]:
         if current != self.zone1 and current != self.zone2:
-            return False
+            return None
         if current == self.zone1:
             return self.zone2
         return self.zone1
 
-    def get_current_hub(self, current) -> Hub:
+    def get_current_hub(self, current) -> Optional[Hub]:
         if current != self.zone1 and current != self.zone2:
-            return False
+            return None
         if current == self.zone1:
             return self.zone1
         return self.zone2
