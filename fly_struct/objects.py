@@ -7,7 +7,10 @@ class Drone:
         self.delivered = False
 
         self.path = path
-        self.current_hub = path[0].get_current_hub(start_hub)
+        hub: Hub | None = path[0].get_current_hub(start_hub)
+        if hub is None:
+            raise ValueError("Invalid path: start_hub not found in first connection")
+        self.current_hub = hub
         self.next_hub = path[0].get_next_hub(start_hub)
         self.connec_idx = 0
         self.in_connec = False

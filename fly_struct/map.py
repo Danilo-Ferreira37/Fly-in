@@ -26,7 +26,7 @@ class Map:
             config["end_hub"]["metadata"],
             end=True,
         )
-        self.hubs = [self.start_hub, self.end_hub]
+        self.hubs: list[Hub] = [self.start_hub, self.end_hub]
         for h in config["hub"]:
             for key, value in h.items():
                 self.hubs.append(Hub(key, value["X/Y"], value["metadata"]))
@@ -91,7 +91,7 @@ class Map:
                 pass
         return all_paths
 
-    def get_path_connection(self, hub_path: List[Hub]) -> Connection:
+    def get_path_connection(self, hub_path: List[Hub]) -> List[Connection]:
         connec_path = []
         for i in range(len(hub_path)):
             for c in self.connections:
@@ -104,11 +104,13 @@ class Map:
                     pass
         return connec_path
 
-    def dijkstra(self, blocked_hub: Hub = None) -> tuple[list[Connection], float]:
+    def dijkstra(self, blocked_hub: Optional[Hub] = None) -> tuple[list[Connection], float]:
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
-        min_queue = [(0, 0, self.start_hub, [])]
-        parent = {self.start_hub: None}
+        min_queue: list[tuple[float, int, Hub, list[Hub]]] = [
+            (0, 0, self.start_hub, [])
+            ]
+        parent: dict[Hub, Hub | None] = {self.start_hub: None}
 
         if blocked_hub:
             true_zone = blocked_hub.zone
@@ -144,7 +146,7 @@ class Map:
         if blocked_hub:
             blocked_hub.zone = true_zone
 
-        hub = self.end_hub
+        hub: Hub | None = self.end_hub
         hub_path = []
         while hub:
             hub_path.append(hub)
