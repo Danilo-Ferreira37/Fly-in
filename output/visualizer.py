@@ -1,10 +1,10 @@
 import pygame
 from fly_struct.map import Map
 import sys
-import random
+
 
 class Visualizer:
-    def __init__(s, map_obj: Map, width: int, height: int, theme: str):
+    def __init__(s, map_obj: Map, width: int, height: int, theme: str) -> None:
         pygame.init()
         s.midle_x = width // 2
         s.midle_y = height // 2
@@ -15,7 +15,7 @@ class Visualizer:
         s.radius = 60
         if theme == "Flying in the Sky":
             s.img_bckg_drone = ("output/nuvens.png", "output/drone.png")
-            s.connec_color = (s.parse_color("gray"))
+            s.connec_color = s.parse_color("gray")
             s.text_color = s.parse_color("black")
         else:
             s.img_bckg_drone = ("output/space.png", "output/ovni.png")
@@ -31,10 +31,10 @@ class Visualizer:
         s.prev_turn = False
         s.screen = pygame.display.set_mode((width, height))
         s.clock = pygame.time.Clock()
-        
+
         pygame.display.set_caption(theme)
 
-    def handle_events(s):
+    def handle_events(s) -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 s.running = False
@@ -49,12 +49,12 @@ class Visualizer:
                     s.auto_mode = not s.auto_mode
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4:# Scroll UP
+                if event.button == 4:
                     s.zoom *= 1.1
-                elif event.button == 5:# Scroll DOWN
+                elif event.button == 5:
                     s.zoom /= 1.1
 
-    def draw(s):
+    def draw(s) -> None:
         s.screen.blit(s.background, (0, 0))
         s.draw_connec()
         s.draw_hubs()
@@ -63,10 +63,10 @@ class Visualizer:
 
         pygame.display.flip()
 
-    def draw_connec(s):
+    def draw_connec(s) -> None:
         offset_x = s.midle_x // 4
         offset_y = s.midle_y
-        
+
         for connec in s.map_obj.connections:
             x1, y1 = connec.zone1.coord
             x2, y2 = connec.zone2.coord
@@ -75,10 +75,12 @@ class Visualizer:
             y1 = y1 * s.scale * s.zoom + offset_y
             x2 = x2 * s.scale * s.zoom + offset_x
             y2 = y2 * s.scale * s.zoom + offset_y
-            
-            pygame.draw.line(s.screen, s.connec_color, (x1, y1), (x2, y2), width=5)
 
-    def draw_hubs(s):
+            pygame.draw.line(
+                s.screen, s.connec_color, (x1, y1), (x2, y2), width=5
+            )
+
+    def draw_hubs(s) -> None:
         offset_x = s.midle_x // 4
         offset_y = s.midle_y
 
@@ -88,18 +90,19 @@ class Visualizer:
 
             x = x * s.scale * s.zoom + offset_x
             y = y * s.scale * s.zoom + offset_y
-            
+
             pygame.draw.circle(s.screen, color, (x, y), s.radius * s.zoom)
-            pygame.draw.circle(s.screen, s.connec_color, (x, y), s.radius * s.zoom, width=3)
+            pygame.draw.circle(
+                s.screen, s.connec_color, (x, y), s.radius * s.zoom, width=3
+            )
 
             font = pygame.font.Font(None, int(25 * s.zoom))
             text = font.render(h.name, True, s.text_color)
             text_rect = text.get_rect(center=(x, y - (s.scale * s.zoom // 2)))
-            
-            
+
             s.screen.blit(text, text_rect)
 
-    def draw_drones(s):
+    def draw_drones(s) -> None:
         offset_x = s.midle_x // 4
         offset_y = s.midle_y
         i = 0
@@ -117,29 +120,35 @@ class Visualizer:
                 i = 0
             else:
                 x, y = d.current_hub.coord
-            x, y = x * s.scale * s.zoom + offset_x, y * s.scale * s.zoom + offset_y
+            x, y = (
+                x * s.scale * s.zoom + offset_x,
+                y * s.scale * s.zoom + offset_y,
+            )
             drone_size = int(50 * s.zoom)
             s.drone_image = pygame.image.load(s.img_bckg_drone[1])
-            s.drone_image = pygame.transform.scale(s.drone_image, (drone_size, drone_size))
-            s.screen.blit(s.drone_image, s.drone_image.get_rect(center=(x + j, y+i)))
+            s.drone_image = pygame.transform.scale(
+                s.drone_image, (drone_size, drone_size)
+            )
+            s.screen.blit(
+                s.drone_image, s.drone_image.get_rect(center=(x + j, y + i))
+            )
             i += 2
             j += 1
 
-    def draw_info(s):
+    def draw_info(s) -> None:
         from fly_struct.map import turn
 
-        offset_x = 900
+        offset_x = s.midle_x
         offset_y = 20
-        font = pygame.font.Font(None, 50)
+        font = pygame.font.Font(None, 55)
         turn_text = font.render(f"Turn {turn}", True, s.text_color)
         s.screen.blit(turn_text, (offset_x, offset_y))
 
-    def run(s):
+    def run(s) -> None:
         s.handle_events()
         s.draw()
 
-    def parse_color(self, color_name):
-        #RGB
+    def parse_color(self, color_name: str) -> tuple[int]:
         color_dict = {
             "red": (255, 0, 0),
             "green": (0, 255, 0),
@@ -161,7 +170,6 @@ class Visualizer:
             "violet": (238, 130, 238),
             "brown": (165, 42, 42),
             "rainbow": (255, 20, 147),
-            "black": (0, 0, 0)
+            "black": (0, 0, 0),
         }
         return color_dict.get(color_name, (255, 255, 255))
-

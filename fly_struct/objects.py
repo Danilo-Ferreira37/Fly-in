@@ -1,7 +1,8 @@
 from typing import Tuple
 
+
 class Drone:
-    def __init__(self, id: str, path: list["Hub"], start_hub) -> None:
+    def __init__(self, id: str, path: list["Hub"], start_hub: "Hub") -> None:
         self.id = id
         self.delivered = False
 
@@ -13,12 +14,22 @@ class Drone:
         self.wait_turns = 0
         self.already_wait = False
 
+
 class Hub:
-    def __init__(self, name: str, coord: Tuple[int], metadata: dict, start: bool = False, end: bool = False):
+    def __init__(
+        self,
+        name: str,
+        coord: Tuple[int],
+        metadata: dict,
+        start: bool = False,
+        end: bool = False,
+    ) -> None:
         self.name = name
         self.coord = coord
         self.metadata = metadata
-        self.color = metadata.get("color", )
+        self.color = metadata.get(
+            "color",
+        )
         self.zone = metadata.get("zone", "normal")
         self.cost = 1 if self.zone == "normal" else 2
         if self.zone == "priority":
@@ -38,7 +49,7 @@ class Hub:
     def can_drone_receive(self) -> bool:
         return self.qnty_drones < self.max_drones
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.start:
             return f"Hub_start: {self.name}  {self.coord} {self.metadata}"
         elif self.end:
@@ -47,7 +58,7 @@ class Hub:
 
 
 class Connection:
-    def __init__(self, from_hub: Hub, to_hub: Hub, metadata: dict):
+    def __init__(self, from_hub: Hub, to_hub: Hub, metadata: dict) -> None:
         self.zone1 = from_hub
         self.zone2 = to_hub
 
@@ -57,19 +68,19 @@ class Connection:
         self.max_l_c = int(metadata.get("max_link_capacity", 1))
         self.current_drones = 0
 
-    def get_next_hub(self, current):
+    def get_next_hub(self, current) -> Hub:
         if current != self.zone1 and current != self.zone2:
             return False
         if current == self.zone1:
             return self.zone2
         return self.zone1
 
-    def get_current_hub(self, current):
+    def get_current_hub(self, current) -> Hub:
         if current != self.zone1 and current != self.zone2:
             return False
         if current == self.zone1:
             return self.zone1
         return self.zone2
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Conn {self.zone1.name} -> {self.zone2.name}, {self.max_l_c})"
