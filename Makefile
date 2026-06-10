@@ -35,4 +35,4 @@ lint-strict: install
 	$(VENV)/bin/flake8 .
 	$(VENV)/bin/mypy . --strict
 
-.PHONY: install run debug clean lint lint-strict
+.PHONY: install run debug clean fclean lint lint-strict
