@@ -188,9 +188,23 @@ class Visualizer:
 
         offset_x = s.midle_x
         offset_y = 20
+
         font = pygame.font.Font(None, 55)
         turn_text = font.render(f"Turn {Map.turn}", True, s.text_color)
         s.screen.blit(turn_text, (offset_x, offset_y))
+
+
+        offset_x = s.midle_x * 1.75
+        offset_y = s.midle_y * 2
+        offset_y -= 50
+
+        font = pygame.font.Font(None, 25)
+        info = font.render("Auto Mode (Space bar)", True, s.text_color)
+        s.screen.blit(info, (offset_x, offset_y))
+
+        offset_y -= 25
+        info = font.render("Manual Mode (Right Arrow)", True, s.text_color)
+        s.screen.blit(info, (offset_x, offset_y))
 
     def run(s) -> None:
         s.handle_events()
