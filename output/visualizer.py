@@ -30,8 +30,8 @@ class Visualizer:
     """
     def __init__(s, map_obj: Map, width: int, height: int, theme: str) -> None:
         pygame.init()
-        s.midle_x = width // 2
-        s.midle_y = height // 2
+        s.midle_x = width / 2
+        s.midle_y = height / 2
         s.map_obj = map_obj
 
         s.zoom = 1.0
@@ -187,12 +187,11 @@ class Visualizer:
     def draw_info(s) -> None:
 
         offset_x = s.midle_x
-        offset_y = 20
+        offset_y = 20.0
 
         font = pygame.font.Font(None, 55)
         turn_text = font.render(f"Turn {Map.turn}", True, s.text_color)
         s.screen.blit(turn_text, (offset_x, offset_y))
-
 
         offset_x = s.midle_x * 1.75
         offset_y = s.midle_y * 2
