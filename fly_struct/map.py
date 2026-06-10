@@ -4,15 +4,26 @@ import heapq
 import time
 from typing import List, Optional, Any, Mapping
 
-YELLOW = "\033[33m"
-GREEN = "\033[32m"
-RED = "\033[31m"
-RESET = "\033[0m"
-
-turn = 0
-
 
 class Map:
+    """
+    Represents the full Fly-In simulation model, including hubs, connections,
+    drones, and all pathfinding logic.
+
+    The Map is responsible for loading the configuration, constructing the
+    network graph, computing valid paths using Dijkstra, spawning drones, and
+    coordinating the simulation loop together with the Visualizer.
+
+    Execution flow:
+        1. Load hubs, connections, and metadata from the configuration.
+        2. Build the graph structure and compute the default shortest path.
+        3. Discover all alternative paths with equal minimal cost.
+        4. Create drones and assign them cyclically to available paths.
+        5. During simulation, advance turns, update drone states, and notify
+           the Visualizer to render each frame.
+    """
+    turn: int = 0
+
     def __init__(self, config: Mapping[str, Any]) -> None:
         self.start_hub = Hub(
             config["start_hub"]["name"],
@@ -63,6 +74,13 @@ class Map:
         ]
 
     def run_simulation(self) -> None:
+        """
+        Runs the main simulation loop.
+
+        The Visualizer is updated every frame, and turns advance either
+        automatically (auto mode) or when the user requests the next turn.
+        The loop continues until all drones reach the end hub.
+        """
         if self.vizu is None:
             raise RuntimeError("Visualizer not initialized")
         while any(not d.delivered for d in self.drones):
@@ -76,6 +94,15 @@ class Map:
                 self.vizu.next_turn = False
 
     def get_all_paths(self) -> List[List[Connection]]:
+        """
+        Computes all valid paths from the start hub to the end hub that have
+        the same minimal cost as the default Dijkstra path.
+
+        Returns:
+            A list of connection-paths, each representing a valid route
+            drones may follow.
+        """
+
         all_paths = [self.default_path]
         for h in self.hubs[2:]:
             try:
@@ -87,6 +114,15 @@ class Map:
         return all_paths
 
     def get_path_connection(self, hub_path: List[Hub]) -> List[Connection]:
+        """
+        Converts a list of hubs into the corresponding list of connections.
+
+        Iterates through consecutive hub pairs and finds the connection that
+        links each pair.
+
+        Returns:
+            A list of Connection objects forming the path.
+        """
         connec_path = []
         for i in range(len(hub_path)):
             for c in self.connections:
@@ -101,6 +137,20 @@ class Map:
 
     def dijkstra(self, blocked_hub:
                  Optional[Hub] = None) -> tuple[list[Connection], float]:
+        """
+        Computes the shortest path from the start hub to the end hub using
+        Dijkstra's algorithm.
+
+        Supports temporarily blocking a hub to test alternative routes.
+
+        Args:
+            blocked_hub: Optional hub to treat as blocked during the search.
+
+        Returns:
+            A tuple containing:
+                - The list of connections forming the shortest path.
+                - The total cost of that path.
+        """
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
         min_queue: list[tuple[float, int, Hub, list[Hub]]] = [
@@ -170,8 +220,20 @@ class Map:
         return next_hub.can_drone_receive()
 
     def simulate_turn(self) -> None:
-        global turn
-        turn += 1
+        """
+        Advances the simulation by one turn.
+
+        For each drone:
+            - Determine its next hub based on the current connection.
+            - Handle waiting logic for restricted zones.
+            - Move the drone into or out of a connection when capacity allows.
+            - Update hub and connection occupancy counters.
+            - Mark drones as delivered when they reach the end hub.
+
+        This method implements all movement rules, including zone restrictions,
+        link capacity checks, and hub capacity constraints.
+        """
+        Map.turn += 1
         for d in self.drones:
             if d.current_hub == self.end_hub:
                 d.delivered = True

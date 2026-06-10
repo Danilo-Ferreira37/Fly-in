@@ -2,6 +2,19 @@ from typing import Tuple, Optional
 
 
 class Drone:
+    """
+    Represents a drone moving through the Fly-In network.
+
+    A Drone follows a predefined path of connections starting from a given
+    start hub. During initialization, the drone determines its initial hub,
+    its next hub, and sets internal state flags used during the simulation.
+
+    Execution flow:
+        1. Store drone ID and path.
+        2. Determine the current hub based on the first connection.
+        3. Determine the next hub the drone will move to.
+        4. Initialize connection index, movement state, and waiting flags.
+    """
     def __init__(self, id: str, path: list["Connection"],
                  start_hub: "Hub") -> None:
         self.id = id
@@ -21,6 +34,19 @@ class Drone:
 
 
 class Hub:
+    """
+    Represents a hub (node) in the Fly-In network.
+
+    A Hub stores its coordinates, metadata, zone type, cost, and capacity
+    constraints. It also tracks how many drones are currently inside and
+    whether it is the start or end hub of the simulation.
+
+    Execution flow:
+        1. Store name, coordinates, and metadata.
+        2. Determine zone type and movement cost.
+        3. Set maximum drone capacity (infinite for start/end hubs).
+        4. Initialize counters and adjacency list for outgoing connections.
+    """
     def __init__(
         self,
         name: str,
@@ -63,6 +89,19 @@ class Hub:
 
 
 class Connection:
+    """
+    Represents a bidirectional connection between two hubs.
+
+    A Connection links two hubs, stores its maximum link capacity, and
+    provides helper methods to determine the next or current hub relative
+    to a drone's position.
+
+    Execution flow:
+        1. Store the two endpoint hubs.
+        2. Register each hub as adjacent to the other.
+        3. Load the maximum number of drones allowed simultaneously.
+        4. Provide utilities for navigating between the two hubs.
+    """
     def __init__(self, from_hub: Hub, to_hub: Hub,
                  metadata: dict[str, int]) -> None:
         self.zone1 = from_hub

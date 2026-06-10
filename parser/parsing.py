@@ -4,10 +4,24 @@ from typing import Any, Dict, List, Set, Optional, Union, Mapping
 
 
 class ParsingError(Exception):
-    pass
+    """Custom exception raised when the configuration
+    file contains invalid syntax or metadata."""
 
 
 class TypeZone(Enum):
+    """
+    Enumeration of valid zone types for hubs.
+
+    Values:
+        NORMAL: Standard zone with default movement cost.
+        RESTRICTED: Zone that may impose waiting rules.
+        PRIORITY: Zone with reduced movement cost.
+        BLOCKED: Zone that cannot be traversed.
+
+    Methods:
+        has_value(value): Returns True if the given
+        string matches a valid zone.
+    """
     NORMAL = "normal"
     RESTRICTED = "restricted"
     PRIORITY = "priority"
@@ -19,6 +33,20 @@ class TypeZone(Enum):
 
 
 class MetaData(Enum):
+    """
+    Enumeration of valid metadata keys for hubs and connections.
+
+    Values:
+        ZONE: Zone type of a hub.
+        COLOR: Display color of a hub.
+        MAX_DRONES: Maximum number of drones allowed in a hub.
+        MAX_LINK_CAPACITY: Maximum number of drones allowed in a connection.
+
+    Methods:
+        has_value(value): Checks if the key is a valid metadata field.
+        valid_color(color): Validates color names or returns the full set of
+        valid colors.
+    """
     ZONE = "zone"
     COLOR = "color"
     MAX_DRONES = "max_drones"
@@ -59,6 +87,23 @@ class MetaData(Enum):
 
 
 class ConfigParser:
+    """
+    Parses a Fly-In configuration file and produces a structured dictionary
+    describing hubs, connections, metadata, and simulation parameters.
+
+    The parser validates syntax, enforces required keys, checks metadata rules,
+    and ensures that hubs and connections are well-formed before the
+    simulation
+    begins.
+
+    Execution flow:
+        1. Read the file line by line, ignoring comments and empty lines.
+        2. Normalize and validate each line according to its type
+        (hub, connection, etc.).
+        3. Extract metadata blocks and validate keys and values.
+        4. Build the final configuration dictionary.
+        5. Ensure all required keys are present and all references are valid.
+    """
     def __init__(self, file: str) -> None:
         self.file = file
         self.required = {
@@ -75,7 +120,17 @@ class ConfigParser:
         self.hub_coordinades: Set[tuple[int, int]] = set()
 
     @staticmethod
+    @staticmethod
     def clean_line(line: str) -> str | None:
+        """
+        Removes whitespace and ignores empty lines or comment lines.
+
+        Args:
+            line: Raw line from the configuration file.
+
+        Returns:
+            The cleaned line, or None if the line should be skipped.
+        """
         line = line.strip()
         if line == "":
             return None
@@ -87,6 +142,20 @@ class ConfigParser:
     def split_metadata(
                     line: str, conx: bool = False
                     ) -> tuple[str, dict[str, str]]:
+        """
+        Extracts and validates metadata from a configuration line.
+        Metadata is expected in the format: [key=value key=value ...]
+        Args:
+            line: The raw line containing optional metadata.
+            conx: If True, only 'max_link_capacity' is allowed.
+
+        Returns:
+            A tuple containing:
+                - The line without the metadata block.
+                - A dictionary of validated metadata key/value pairs.
+        Raises:
+            ParsingError: If metadata syntax or values are invalid.
+        """
         match = re.search(r"\[(.*)$", line)
         if not match:
             return line.strip(), {}
@@ -128,7 +197,7 @@ class ConfigParser:
             if key == MetaData.COLOR.value:
                 if not MetaData.valid_color(value):
                     raise ParsingError(
-                        f"Enter a valid color"
+                        f"Enter a valid color "
                         f"between: {MetaData.valid_color(None, True)}"
                     )
             elif key == MetaData.ZONE.value:
@@ -155,6 +224,27 @@ class ConfigParser:
         return rest, metadata
 
     def parse_line(self, line: str) -> Optional[Union[int, Dict[str, Any]]]:
+        """
+        Parses a single configuration line and converts it
+        into structured data.
+
+        Handles:
+            - nb_drones
+            - start_hub / end_hub
+            - hub definitions
+            - connection definitions
+
+        Args:
+            line: The raw configuration line.
+
+        Returns:
+            Parsed data appropriate to the line type, or None if the line
+            does not produce a direct configuration entry.
+
+        Raises:
+            ParsingError: For invalid syntax or metadata.
+            ValueError: For invalid numeric fields.
+        """
         try:
             is_hub = False
             if line.startswith("nb_drones"):
@@ -224,8 +314,8 @@ class ConfigParser:
 
         except ValueError:
             print(
-                "Error: The nb_drones, max_drones and"
-                "limits_capacity value must be positive integers"
+                "Error: The nb_drones, max_drones and "
+                "limits_capacity value must be positive integers "
                 "and X/Y coordinades integers!"
             )
             exit(1)
@@ -234,6 +324,20 @@ class ConfigParser:
             exit(1)
 
     def split_parse_line(self, line: str) -> None:
+        """
+        Determines the type of configuration entry and stores it in the
+        internal configuration dictionary.
+
+        Ensures correct ordering (nb_drones must appear first) and prevents
+        duplicate keys where not allowed.
+
+        Args:
+            line: A cleaned configuration line.
+
+        Raises:
+            ValueError: For invalid structure or repeated keys.
+            ParsingError: For malformed hub or connection definitions.
+        """
         line = line.strip()
         if ":" not in line:
             raise ValueError(
@@ -254,7 +358,7 @@ class ConfigParser:
                 )
             if self.config:
                 raise ValueError(
-                    "The nb_drones must to be the first line if"
+                    "The nb_drones must to be the first line if "
                     "config in the file!"
                 )
             key = line.split(":", 1)[0]
@@ -297,6 +401,25 @@ class ConfigParser:
         return None
 
     def load_file(self) -> Mapping[str, Any]:
+        """
+        Loads and parses the entire configuration file.
+
+        Steps:
+            1. Read each line and clean it.
+            2. Parse and validate each configuration entry.
+            3. Ensure all required keys are present.
+            4. Validate that all referenced hubs exist.
+
+        Returns:
+            A fully validated configuration dictionary ready for
+            use by the Map.
+
+        Raises:
+            PermissionError: If the file cannot be accessed.
+            FileNotFoundError: If the file does not exist.
+            ValueError: For missing required keys or invalid values.
+            ParsingError: For malformed configuration entries.
+        """
         try:
             with open(self.file) as f:
 

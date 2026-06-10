@@ -3,6 +3,19 @@ from typing import Tuple
 
 
 def choose_map() -> Tuple[str, str]:
+    """
+    Displays an interactive terminal menu for selecting a map and theme.
+
+    The user can choose predefined maps by difficulty (easy, medium, hard),
+    load the challenger map, provide a custom configuration file, or switch
+    between available visual themes. The function loops until a valid option
+    is selected or the user chooses to exit.
+
+    Returns:
+        A tuple containing:
+            - The path to the selected map file.
+            - The chosen visualization theme.
+    """
     maps = {
         "easy": {
             "1": "01_linear_path.txt",

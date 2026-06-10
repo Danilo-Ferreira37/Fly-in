@@ -1,9 +1,33 @@
 import pygame
 from fly_struct.map import Map
 import sys
+import math
+import time
 
 
 class Visualizer:
+    """
+    Graphical renderer for the Fly-In simulation using Pygame.
+
+    The Visualizer loads the selected theme, draws the map (hubs, connections,
+    drones), and handles user interaction such as zooming, switching turns,
+    and
+    enabling automatic playback. It converts logical map coordinates
+    into screen
+    coordinates and updates the display every frame.
+
+    Execution flow:
+        1. Initialize Pygame, load background and drone assets.
+        2. On each frame, process user input (zoom, next/previous turn,
+        quit).
+        3. Clear the screen and draw:
+            - connections between hubs
+            - hubs and their labels
+            - drones (in hubs or in connections)
+            - current turn information
+        4. Update the display and maintain frame timing.
+        5. Repeat while the visualization is running.
+    """
     def __init__(s, map_obj: Map, width: int, height: int, theme: str) -> None:
         pygame.init()
         s.midle_x = width // 2
@@ -35,6 +59,17 @@ class Visualizer:
         pygame.display.set_caption(theme)
 
     def handle_events(s) -> None:
+        """
+        Processes all user input events from Pygame.
+
+        Handles:
+            - Window close requests.
+            - Keyboard input for advancing turns and toggling auto mode.
+            - Mouse wheel input for zooming in and out.
+
+        This method updates the Visualizer's state flags (`running`,
+        `next_turn`, `auto_mode`, and `zoom`) based on user interaction.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 s.running = False
@@ -88,7 +123,10 @@ class Visualizer:
 
         for h in s.map_obj.hubs:
             x, y = h.coord
-            color = s.parse_color(h.color)
+            if h.color == "rainbow":
+                color = s.rainbow_color()
+            else:
+                color = s.parse_color(h.color)
 
             x = x * s.scale * s.zoom + offset_x
             y = y * s.scale * s.zoom + offset_y
@@ -107,43 +145,51 @@ class Visualizer:
     def draw_drones(s) -> None:
         offset_x = s.midle_x // 4
         offset_y = s.midle_y
-        i = 0
-        j = 0
+
+        drone_size = int(50 * s.zoom)
+        drone_img = pygame.image.load(s.img_bckg_drone[1])
+        drone_img = pygame.transform.scale(drone_img, (drone_size, drone_size))
+
+        for hub in s.map_obj.hubs:
+            drones_here = [d for d in s.map_obj.drones
+                           if d.current_hub == hub and not d.in_connec]
+
+            n = len(drones_here)
+
+            for idx, d in enumerate(drones_here):
+                x, y = hub.coord
+                x = x * s.scale * s.zoom + offset_x
+                y = y * s.scale * s.zoom + offset_y
+
+                if n == 1:
+                    dx, dy = 0.0, 0.0
+                else:
+                    angle = (2 * math.pi / n) * idx
+                    radius = 15 * s.zoom
+                    dx = math.cos(angle) * radius
+                    dy = math.sin(angle) * radius
+
+                s.screen.blit(drone_img,
+                              drone_img.get_rect(center=(x + dx, y + dy)))
+
         for d in s.map_obj.drones:
-            if j > 15:
-                i = 0
-            if i > 10:
-                j = 0
             if d.in_connec:
                 hub1 = d.path[d.connec_idx].zone1
                 hub2 = d.path[d.connec_idx].zone2
                 x = (hub1.coord[0] + hub2.coord[0]) / 2
                 y = (hub1.coord[1] + hub2.coord[1]) / 2
-                i = 0
-            else:
-                x, y = d.current_hub.coord
-            x, y = (
-                x * s.scale * s.zoom + offset_x,
-                y * s.scale * s.zoom + offset_y,
-            )
-            drone_size = int(50 * s.zoom)
-            s.drone_image = pygame.image.load(s.img_bckg_drone[1])
-            s.drone_image = pygame.transform.scale(
-                s.drone_image, (drone_size, drone_size)
-            )
-            s.screen.blit(
-                s.drone_image, s.drone_image.get_rect(center=(x + j, y + i))
-            )
-            i += 2
-            j += 1
+
+                x = x * s.scale * s.zoom + offset_x
+                y = y * s.scale * s.zoom + offset_y
+
+                s.screen.blit(drone_img, drone_img.get_rect(center=(x, y)))
 
     def draw_info(s) -> None:
-        from fly_struct.map import turn
 
         offset_x = s.midle_x
         offset_y = 20
         font = pygame.font.Font(None, 55)
-        turn_text = font.render(f"Turn {turn}", True, s.text_color)
+        turn_text = font.render(f"Turn {Map.turn}", True, s.text_color)
         s.screen.blit(turn_text, (offset_x, offset_y))
 
     def run(s) -> None:
@@ -175,3 +221,11 @@ class Visualizer:
             "black": (0, 0, 0),
         }
         return color_dict.get(color_name, (255, 255, 255))
+
+    @staticmethod
+    def rainbow_color() -> tuple[int, int, int]:
+        t = time.time()
+        r = int((math.sin(t) + 1) * 127)
+        g = int((math.sin(t + 2) + 1) * 127)
+        b = int((math.sin(t + 4) + 1) * 127)
+        return (r, g, b)
