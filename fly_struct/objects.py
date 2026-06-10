@@ -2,14 +2,16 @@ from typing import Tuple, Optional
 
 
 class Drone:
-    def __init__(self, id: str, path: list["Connection"], start_hub: "Hub") -> None:
+    def __init__(self, id: str, path: list["Connection"],
+                 start_hub: "Hub") -> None:
         self.id = id
         self.delivered = False
 
         self.path = path
         hub: Hub | None = path[0].get_current_hub(start_hub)
         if hub is None:
-            raise ValueError("Invalid path: start_hub not found in first connection")
+            raise ValueError("Invalid path: start_hub"
+                             "not found in first connection")
         self.current_hub = hub
         self.next_hub = path[0].get_next_hub(start_hub)
         self.connec_idx = 0
@@ -23,7 +25,7 @@ class Hub:
         self,
         name: str,
         coord: Tuple[float, float],
-        metadata: dict,
+        metadata: dict[str, str],
         start: bool = False,
         end: bool = False,
     ) -> None:
@@ -50,7 +52,6 @@ class Hub:
         self.next: list[Hub] = []
 
     def can_drone_receive(self) -> bool:
-        print()
         return self.qnty_drones < self.max_drones
 
     def __repr__(self) -> str:
@@ -62,7 +63,8 @@ class Hub:
 
 
 class Connection:
-    def __init__(self, from_hub: Hub, to_hub: Hub, metadata: dict) -> None:
+    def __init__(self, from_hub: Hub, to_hub: Hub,
+                 metadata: dict[str, int]) -> None:
         self.zone1 = from_hub
         self.zone2 = to_hub
 
@@ -72,14 +74,14 @@ class Connection:
         self.max_l_c = int(metadata.get("max_link_capacity", 1))
         self.current_drones = 0
 
-    def get_next_hub(self, current) -> Optional[Hub]:
+    def get_next_hub(self, current: Hub) -> Optional[Hub]:
         if current != self.zone1 and current != self.zone2:
             return None
         if current == self.zone1:
             return self.zone2
         return self.zone1
 
-    def get_current_hub(self, current) -> Optional[Hub]:
+    def get_current_hub(self, current: Hub) -> Optional[Hub]:
         if current != self.zone1 and current != self.zone2:
             return None
         if current == self.zone1:

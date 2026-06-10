@@ -1,6 +1,7 @@
 from enum import Enum
 import re
-from typing import Any, Dict, List, Set,Optional, Union
+from typing import Any, Dict, List, Set, Optional, Union, Mapping
+
 
 class ParsingError(Exception):
     pass
@@ -28,8 +29,9 @@ class MetaData(Enum):
         return value in (item.value for item in cls)
 
     @staticmethod
-    def valid_color(color, return_colors: bool = False) -> bool | set:
-        valid_color = {
+    def valid_color(color: Optional[str],
+                    return_colors: bool = False) -> bool | set[str]:
+        valid_color: set[str] = {
             "blue",
             "green",
             "crimson",
@@ -83,8 +85,8 @@ class ConfigParser:
 
     @staticmethod
     def split_metadata(
-    line: str, conx: bool = False
-) -> tuple[str, dict[str, str]]:
+                    line: str, conx: bool = False
+                    ) -> tuple[str, dict[str, str]]:
         match = re.search(r"\[(.*)$", line)
         if not match:
             return line.strip(), {}
@@ -214,7 +216,9 @@ class ConfigParser:
                 pair = (hub_from, hub_to)
                 if pair not in self.connec_names:
                     self.connec_names.append(pair)
-                    return {"from": hub_from, "to": hub_to, "metadata": metadata}
+                    return {"from": hub_from,
+                            "to": hub_to,
+                            "metadata": metadata}
 
             return None
 
@@ -292,7 +296,7 @@ class ConfigParser:
 
         return None
 
-    def load_file(self) -> dict:
+    def load_file(self) -> Mapping[str, Any]:
         try:
             with open(self.file) as f:
 

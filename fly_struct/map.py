@@ -2,7 +2,7 @@ from fly_struct import Drone, Hub, Connection
 from parser import TypeZone
 import heapq
 import time
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Mapping
 
 YELLOW = "\033[33m"
 GREEN = "\033[32m"
@@ -13,7 +13,7 @@ turn = 0
 
 
 class Map:
-    def __init__(self, config: dict):
+    def __init__(self, config: Mapping[str, Any]) -> None:
         self.start_hub = Hub(
             config["start_hub"]["name"],
             config["start_hub"]["X/Y"],
@@ -53,14 +53,9 @@ class Map:
             exit(1)
 
         self.all_paths = self.get_all_paths()
-        print(type(self.all_paths))
-        print(type(self.all_paths[0]))
-        print(self.all_paths)
-
         self.drones = [
             Drone(
                 f"D{d + 1}",
-                
                 self.all_paths[d % len(self.all_paths)],
                 self.start_hub,
             )
@@ -104,7 +99,8 @@ class Map:
                     pass
         return connec_path
 
-    def dijkstra(self, blocked_hub: Optional[Hub] = None) -> tuple[list[Connection], float]:
+    def dijkstra(self, blocked_hub:
+                 Optional[Hub] = None) -> tuple[list[Connection], float]:
         dist = {h: float("inf") for h in self.hubs}
         dist[self.start_hub] = 0
         min_queue: list[tuple[float, int, Hub, list[Hub]]] = [
@@ -169,7 +165,8 @@ class Map:
         if drone.connec_idx >= len(drone.path):
             return False
         next_hub = drone.path[drone.connec_idx].get_next_hub(drone.current_hub)
-
+        if next_hub is None:
+            return False
         return next_hub.can_drone_receive()
 
     def simulate_turn(self) -> None:
@@ -181,6 +178,9 @@ class Map:
                 continue
 
             d.next_hub = d.path[d.connec_idx].get_next_hub(d.current_hub)
+            # Verify only to the mypy
+            if d.next_hub is None:
+                continue
 
             if d.wait_turns > 0:
                 d.wait_turns -= 1

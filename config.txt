@@ -9,7 +9,7 @@ hub: B 2 2 [zone=restricted color=blue max_drones=2]
 hub: C 4 0 [zone=restricted color=red max_drones=2]
 hub: D 4 2 [zone=restricted color=red]
 hub: E 6 0 [zone=restricted color=violet max_drones=2]
-#hub: F 7 2 [color=blue]
+#hub: F 7 2 [color=blu]
 
 connection: start-A [max_link_capacity=2]
 connection: start-B 
