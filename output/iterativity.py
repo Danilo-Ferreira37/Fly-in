@@ -59,6 +59,8 @@ def choose_map() -> Tuple[str, str]:
                 continue
             os.system("clear")
             output = f'maps/easy/{maps["easy"].get(mp.replace("0", ""))}'
+            print("Current Map: ", maps["easy"].get(mp.replace("0", ""), "")
+                  .replace(".txt", "").replace("_", " "), "\n")
             return output, theme
 
         elif option == "2":
@@ -72,6 +74,8 @@ def choose_map() -> Tuple[str, str]:
                 print("To the medium maps choose a number from 1 to 3.")
                 continue
             os.system("clear")
+            print("Current Map: ", maps["medium"].get(mp.replace("0", ""), "")
+                  .replace(".txt", "").replace("_", " "), "\n")
             output = f'maps/medium/{maps["medium"].get(mp.replace("0", ""))}'
             return output, theme
 
@@ -87,10 +91,13 @@ def choose_map() -> Tuple[str, str]:
                 continue
             os.system("clear")
             output = f'maps/hard/{maps["hard"].get(mp.replace("0", ""))}'
+            print("Current Map: ", maps["hard"].get(mp.replace("0", ""), "")
+                  .replace(".txt", "").replace("_", " "), "\n")
             return output, theme
 
         elif option == "4":
             os.system("clear")
+            print("Current Map: The Impossible Dream\n")
             return "maps/challenger/01_the_impossible_dream.txt", theme
 
         elif option == "5":
@@ -101,6 +108,7 @@ def choose_map() -> Tuple[str, str]:
                 os.system("clear")
                 continue
             os.system("clear")
+            print("Customized Map\n")
             return mp, theme
 
         elif option == "6":

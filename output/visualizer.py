@@ -75,6 +75,7 @@ class Visualizer:
                 s.running = False
                 pygame.quit()
                 sys.exit(0)
+
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
                     s.next_turn = True
@@ -82,6 +83,10 @@ class Visualizer:
                     s.prev_turn = True
                 elif event.key == pygame.K_SPACE:
                     s.auto_mode = not s.auto_mode
+                elif event.key == pygame.K_q:
+                    s.running = False
+                    pygame.quit()
+                    sys.exit(0)
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 4:
@@ -185,19 +190,24 @@ class Visualizer:
                 s.screen.blit(drone_img, drone_img.get_rect(center=(x, y)))
 
     def draw_info(s) -> None:
-
         offset_x = s.midle_x
         offset_y = 20.0
-
         font = pygame.font.Font(None, 55)
         turn_text = font.render(f"Turn {Map.turn}", True, s.text_color)
         s.screen.blit(turn_text, (offset_x, offset_y))
 
         offset_x = s.midle_x * 1.75
         offset_y = s.midle_y * 2
-        offset_y -= 50
-
+        offset_y -= 40
         font = pygame.font.Font(None, 25)
+        info = font.render("Quit (q)", True, s.text_color)
+        s.screen.blit(info, (offset_x, offset_y))
+
+        info = font.render("Zoom (Scrow Mouse)", True, s.text_color)
+        offset_y -= 25
+        s.screen.blit(info, (offset_x, offset_y))
+
+        offset_y -= 25
         info = font.render("Auto Mode (Space bar)", True, s.text_color)
         s.screen.blit(info, (offset_x, offset_y))
 

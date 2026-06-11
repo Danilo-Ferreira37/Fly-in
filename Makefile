@@ -15,6 +15,7 @@ clean:
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	@find . -type f -name "*.pyc" -delete
+	@clear
 	@echo "\033[32mEvery cleanup!!"
 
 fclean:
@@ -22,6 +23,7 @@ fclean:
 	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	@find . -type f -name "*.pyc" -delete
 	@rm -rf venv
+	@clear
 	@echo "\033[32mProject full cleanup!!"
 
 debug: install
