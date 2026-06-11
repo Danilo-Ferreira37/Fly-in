@@ -37,6 +37,7 @@ class Visualizer:
         s.zoom = 1.0
         s.scale = 150
         s.radius = 60
+
         if theme == "Flying in the Sky":
             s.img_bckg_drone = ("output/nuvens.png", "output/drone.png")
             s.connec_color = s.parse_color("gray")
