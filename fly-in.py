@@ -38,8 +38,8 @@ def main() -> None:
     info = config.load_file()
     map = Map(info)
     try:
-        # map.vizu = Visualizer(map, 3700, 2500, theme)
-        map.vizu = Visualizer(map, 1900, 1000, theme)
+        map.vizu = Visualizer(map, 3700, 1900, theme)
+        # map.vizu = Visualizer(map, 1900, 1000, theme)
         map.run_simulation()
     except FileNotFoundError:
         print("Error: Image to the vizualization not found!")
